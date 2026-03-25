@@ -23,20 +23,21 @@ let history = [];
 let sheetsQueue = [];
 let isWeatherPlaying = false; 
 
-// 🌟 ADVANCED 3D OCEAN VARIABLES
+// 🌟 VAPORWAVE 3D OCEAN VARIABLES
 let scene, camera, renderer, oceanGeometry, oceanMesh, oceanWireframe, clock;
 let splashParticles, splashGeometry, flashLight;
 
 window.onload = () => {
     changeAudio();
-    init3DOcean(); // Fire up the new Ocean Engine
+    init3DOcean(); // Fire up the new Vaporwave Engine
     if (activeToken) { initializeUserData(activeToken); }
 };
 
 // --- 3. THE 3D CYBER-OCEAN ENGINE ---
 function init3DOcean() {
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000510, 0.012); 
+    // Vaporwave fog: deep, atmospheric, and dark
+    scene.fog = new THREE.FogExp2(0x000205, 0.015); 
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
     camera.position.set(0, 12, 50); 
@@ -62,19 +63,22 @@ function init3DOcean() {
     oceanGeometry = new THREE.PlaneGeometry(400, 400, 120, 120);
     oceanGeometry.rotateX(-Math.PI / 2);
 
-    let oceanMaterial = new THREE.MeshPhongMaterial({
-        color: 0x000a14, // Stays dark blue forever!
-        shininess: 150,
-        specular: 0x00FFFF, 
+    // 🌟 UPGRADE: Liquid Metal Vaporwave Base
+    let oceanMaterial = new THREE.MeshStandardMaterial({
+        color: 0x000205, // Deep void black/blue
+        roughness: 0.1,  // Very glossy
+        metalness: 0.8,  // Acts like liquid chrome
         flatShading: true
     });
     oceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
     
+    // 🌟 UPGRADE: Glowing Vector Additive Grid
     let wireframeMaterial = new THREE.MeshBasicMaterial({
         color: 0x00FFFF, 
         wireframe: true,
         transparent: true,
-        opacity: 0.1
+        opacity: 0.25, // Stronger visibility
+        blending: THREE.AdditiveBlending // Makes the grid literally glow like neon light
     });
     oceanWireframe = new THREE.Mesh(oceanGeometry, wireframeMaterial);
 
@@ -136,13 +140,18 @@ function animateOcean() {
     const stormMultiplier = isWeatherPlaying ? 3.5 : 0.3; 
     const speedMultiplier = isWeatherPlaying ? 1.5 : 0.5;
 
+    // 🌟 UPGRADE: Infinite Continuous Rolling (No more snapping resets!)
+    // We add time to the Z-axis math so the waves physically roll toward the camera
+    const forwardFlow = time * 20 * speedMultiplier;
+
     for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i);
         const z = positions.getZ(i);
 
-        const wave1 = Math.sin(x * 0.02 + time * speedMultiplier) * Math.cos(z * 0.02 + time * speedMultiplier) * 4;
-        const wave2 = Math.sin(x * 0.05 - time * speedMultiplier * 1.2) * Math.sin(z * 0.04 + time) * 2.5;
-        const wave3 = Math.cos(x * 0.1 + z * 0.1 + time * speedMultiplier * 2) * 1.5;
+        // We use (z + forwardFlow) to animate the waves endlessly
+        const wave1 = Math.sin(x * 0.02 + time * speedMultiplier) * Math.cos((z + forwardFlow) * 0.02) * 4;
+        const wave2 = Math.sin(x * 0.05 - time * speedMultiplier * 1.2) * Math.sin((z + forwardFlow) * 0.04) * 2.5;
+        const wave3 = Math.cos(x * 0.1 + (z + forwardFlow) * 0.1) * 1.5;
         
         const finalHeight = (wave1 + wave2 + wave3) * stormMultiplier;
         positions.setY(i, finalHeight);
@@ -155,12 +164,8 @@ function animateOcean() {
     oceanGeometry.attributes.position.needsUpdate = true;
     oceanGeometry.computeVertexNormals(); 
 
-    oceanMesh.position.z += 0.15 * speedMultiplier;
-    oceanWireframe.position.z += 0.15 * speedMultiplier;
-    if (oceanMesh.position.z > 20) {
-        oceanMesh.position.z = 0;
-        oceanWireframe.position.z = 0;
-    }
+    // MESH REMAINS STATIC - Only the mathematics move, creating a flawless infinite loop!
+    // (We deleted the code that was snapping the position.z back to 0)
 
     const splashPos = splashGeometry.attributes.position.array;
     for (let i = 0; i < splashPos.length / 3; i++) {
@@ -269,7 +274,7 @@ function initializeUserData(token) {
 
 function logout() { localStorage.removeItem('dua_activeToken'); location.reload(); }
 
-// --- 6. DYNAMIC COLOR SHIFT (FIXED FOR OCEAN) ---
+// --- 6. DYNAMIC COLOR SHIFT ---
 function updateThemeColors(percentage) {
     const root = document.documentElement;
     let currentHex = 0x00FFFF;
@@ -291,7 +296,6 @@ function updateThemeColors(percentage) {
         currentHex = 0xFFD700;
     }
 
-    // 🌟 FIXED: We ONLY tint the wireframe, lights, and splashes. The deep ocean stays dark!
     if (oceanWireframe && oceanWireframe.material) {
         oceanWireframe.material.color.setHex(currentHex);
     }
