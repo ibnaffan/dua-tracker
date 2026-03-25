@@ -6,9 +6,6 @@
     <title>OP-1 DU'A TRACKER</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
     <div id="loginScreen" class="dashboard-container" style="text-align: center; max-width: 400px;">
@@ -16,7 +13,7 @@
         <p style="color: #888; margin-bottom: 1rem;">Enter your access token to continue.</p>
         <input type="text" id="tokenInput" class="neon-input" placeholder="Enter Token..." style="width: 100%; margin-bottom: 1rem; text-align: center;">
         <button class="secondary-btn" style="width: 100%;" onclick="verifyToken()">AUTHENTICATE</button>
-        <p id="loginError" style="color: #ff3333; margin-top: 1rem; display: none;">ACCESS DENIED: Invalid Token</p>
+        <p id="loginError" style="color: #ff3333; margin-top: 1rem; display: none;">ACCESS DENIED</p>
     </div>
 
     <div id="dashboard" class="dashboard-container" style="display: none;">
@@ -24,41 +21,48 @@
             <h1 class="glow-text">OP-1 TRACKER</h1>
         </header>
 
+        <div class="media-center">
+            <span class="label">LIVE RECITATION STREAM</span>
+            <select id="reciterSelect" class="neon-input" style="width: 100%; margin-bottom: 10px;" onchange="changeAudio()">
+                <option value="https://qurango.net/radio/mishary_alafasi">Mishary Rashid Alafasy (Continuous)</option>
+                <option value="https://qurango.net/radio/abdulbasit_abdulsamad_mojawwad">Abdul Basit (Continuous)</option>
+                <option value="https://qurango.net/radio/yasser_aldosari">Yasser Al-Dosari (Continuous)</option>
+                <option value="https://qurango.net/radio/maher_al_muaiqly">Maher Al Muaiqly (Continuous)</option>
+            </select>
+            <audio id="quranAudio" controls crossorigin="anonymous"></audio>
+        </div>
+
         <div class="stats-grid">
-            <div class="stat-box">
+            <div class="stat-box" style="position: relative;">
                 <span class="label">TARGET</span>
-                <span class="value" id="target">1,000,000</span>
+                <span class="value" id="targetDisplay">1,000,000</span>
+                <button onclick="editTarget()" style="background: none; border: none; color: #888; cursor: pointer; position: absolute; top: 10px; right: 10px;">✎</button>
             </div>
             <div class="stat-box glow-box">
                 <span class="label">GRAND TOTAL</span>
-                <span class="value cyan-text" id="grandTotal">0</span>
+                <span class="value dynamic-text" id="grandTotal">0</span>
             </div>
             <div class="stat-box">
                 <span class="label">LEFT TO GO</span>
                 <span class="value" id="leftToGo">1,000,000</span>
             </div>
-            <div class="stat-box">
-                <span class="label">100s COMPLETED</span>
-                <span class="value" id="hundreds">0</span>
-            </div>
-            <div class="stat-box">
-                <span class="label">1,000s COMPLETED</span>
-                <span class="value" id="thousands">0</span>
-            </div>
         </div>
 
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
+        <div class="speedometer-container">
+            <svg viewBox="0 0 200 110" class="speedometer">
+                <path class="speed-bg" d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke-width="12" stroke-linecap="round"/>
+                <path id="speedFill" class="speed-fill" d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke-width="12" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round"/>
+            </svg>
         </div>
 
         <div class="main-controls">
             <div class="daily-stat">
                 <span class="label">SESSION COUNT</span>
-                <span class="value" id="dailyCount">0</span>
+                <span class="value dynamic-text" id="dailyCount" style="font-size: 2rem;">0</span>
             </div>
             
-            <div class="manual-input-group">
-                <input type="number" id="manualInput" class="neon-input" placeholder="Enter amount...">
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="manualInput" class="neon-input" placeholder="Bulk Add...">
                 <button class="small-btn" onclick="addManual()">ADD</button>
             </div>
             
@@ -66,8 +70,10 @@
                 <span class="btn-text">+1</span>
             </button>
 
-            <button class="secondary-btn" onclick="saveSession()">END DAY & SAVE</button>
-            <button class="secondary-btn" style="margin-top: 10px; border-color: #555; color: #aaa;" onclick="downloadCSV()">DOWNLOAD CSV BACKUP</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="secondary-btn" onclick="saveSession()">END DAY & SAVE</button>
+                <button class="secondary-btn" style="border-color: #555; color: #aaa;" onclick="downloadCSV()">CSV BACKUP</button>
+            </div>
         </div>
 
         <div class="terminal">
@@ -76,11 +82,11 @@
         </div>
 
         <div style="text-align: center; margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
-            <p style="color: #555; font-size: 0.8rem;">LOGGED IN AS: <span id="currentUserDisplay" class="cyan-text"></span></p>
+            <p style="color: #555; font-size: 0.8rem;">TOKEN: <span id="currentUserDisplay" class="dynamic-text"></span></p>
             <button class="secondary-btn" style="margin-top: 10px; border-color: #555; color: #aaa; font-size: 0.7rem;" onclick="logout()">LOGOUT</button>
         </div>
-    </div> <script src="app.js"></script>
-</body>
-</html>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
