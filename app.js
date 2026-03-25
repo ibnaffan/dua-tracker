@@ -15,8 +15,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 db.enablePersistence().catch(err => console.log("Offline mode error:", err));
 
-// --- 2. MULTI-USER STATE ---
-// --- STATE VARIABLES ---
+// --- 1. STATE VARIABLES ---
 let activeToken = localStorage.getItem('dua_activeToken') || null;
 let userTarget = 1000000;
 let grandTotal = 0;
@@ -24,38 +23,44 @@ let dailyCount = 0;
 let history = [];
 let sheetsQueue = [];
 
-// Initialize Audio Player on load
+// --- 2. INITIALIZATION ---
 window.onload = () => {
-    changeAudio(); // Load the default stream
+    changeAudio(); // Load the default audio stream
     if (activeToken) {
         initializeUserData(activeToken);
     }
 };
 
-// --- QURAN RADIO LOGIC ---
 function changeAudio() {
     const audioEl = document.getElementById('quranAudio');
     const selectEl = document.getElementById('reciterSelect');
-    audioEl.src = selectEl.value;
+    if (audioEl && selectEl) {
+        audioEl.src = selectEl.value;
+    }
 }
 
-// --- GATEKEEPER ---
+// --- 3. GATEKEEPER (LOGIN) ---
 async function verifyToken() {
     const inputToken = document.getElementById('tokenInput').value.trim();
     if (!inputToken) return;
 
-    // MASTER KEY BYPASS
+    // The hidden backdoor! Valid tokens:
     if (inputToken === "admin-master" || inputToken === "guest-01") {
         localStorage.setItem('dua_activeToken', inputToken);
         initializeUserData(inputToken);
         return; 
     }
-    document.getElementById('loginError').style.display = 'block';
+
+    // NEW: Generic error so others don't know the master token
+    const errorEl = document.getElementById('loginError');
+    errorEl.innerText = "ACCESS DENIED: Invalid Token.";
+    errorEl.style.display = 'block';
 }
 
 function initializeUserData(token) {
     activeToken = token;
     
+    // Hide login screen, reveal dashboard
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('currentUserDisplay').innerText = token;
@@ -82,7 +87,7 @@ function logout() {
     location.reload(); 
 }
 
-// --- DYNAMIC COLOR SHIFT ENGINE ---
+// --- 4. DYNAMIC COLOR SHIFT ENGINE ---
 function updateThemeColors(percentage) {
     const root = document.documentElement;
     
@@ -104,12 +109,12 @@ function updateThemeColors(percentage) {
     }
 }
 
-// --- DASHBOARD UI UPDATES ---
+// --- 5. DASHBOARD UI UPDATES ---
 function updateUI() {
     document.getElementById('targetDisplay').innerText = userTarget.toLocaleString();
     document.getElementById('grandTotal').innerText = grandTotal.toLocaleString();
     
-    // Ensure "Left to Go" doesn't go negative if you surpass target
+    // Ensure "Left to Go" doesn't go negative
     const remaining = Math.max(0, userTarget - grandTotal);
     document.getElementById('leftToGo').innerText = remaining.toLocaleString();
     document.getElementById('dailyCount').innerText = dailyCount.toLocaleString();
@@ -120,28 +125,35 @@ function updateUI() {
 
     updateThemeColors(percentage);
 
-    // The half-circle circumference is 283. Offset 283 = Empty. Offset 0 = Full.
-    const strokeOffset = 283 - (percentage / 100) * 283;
-    document.getElementById('speedFill').style.strokeDashoffset = strokeOffset;
+    // Speedometer Fill Math
+    const speedFill = document.getElementById('speedFill');
+    if (speedFill) {
+        const strokeOffset = 283 - (percentage / 100) * 283;
+        speedFill.style.strokeDashoffset = strokeOffset;
+    }
 
     // Render History
     const logContainer = document.getElementById('historyLog');
-    logContainer.innerHTML = '';
-    history.slice().reverse().forEach(session => {
-        const li = document.createElement('li');
-        li.innerText = `> ${session.date}: +${session.count.toLocaleString()}`;
-        logContainer.appendChild(li);
-    });
+    if (logContainer) {
+        logContainer.innerHTML = '';
+        history.slice().reverse().forEach(session => {
+            const li = document.createElement('li');
+            li.innerText = `> ${session.date}: +${session.count.toLocaleString()}`;
+            logContainer.appendChild(li);
+        });
+    }
 }
 
-// --- NEW FUNCTION: EDIT TARGET ---
+// --- 6. CORE ACTIONS ---
 function editTarget() {
     const newTarget = prompt("Enter your new target number (e.g., 500000):", userTarget);
-    const parsed = parseInt(newTarget);
-    if (!isNaN(parsed) && parsed > 0) {
-        userTarget = parsed;
-        localStorage.setItem('dua_target_' + activeToken, userTarget);
-        updateUI();
+    if (newTarget !== null) {
+        const parsed = parseInt(newTarget);
+        if (!isNaN(parsed) && parsed > 0) {
+            userTarget = parsed;
+            localStorage.setItem('dua_target_' + activeToken, userTarget);
+            updateUI();
+        }
     }
 }
 
@@ -165,7 +177,9 @@ function addManual() {
     }
 }
 
-// --- SAVING LOGIC (Sheets/Local) ---
+// --- 7. SAVING & SYNCING ---
+const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec";
+
 function saveSession() {
     if (dailyCount === 0) return;
 
@@ -191,7 +205,7 @@ async function processSheetsQueue() {
     if (!navigator.onLine || sheetsQueue.length === 0) return;
     const sessionToSync = sheetsQueue[0];
     try {
-        await fetch("https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec", {
+        await fetch(GOOGLE_SHEETS_URL, {
             method: 'POST',
             body: JSON.stringify(sessionToSync)
         });
@@ -199,12 +213,12 @@ async function processSheetsQueue() {
         localStorage.setItem('dua_sheetsQueue_' + activeToken, JSON.stringify(sheetsQueue));
         if (sheetsQueue.length > 0) processSheetsQueue(); 
     } catch (error) {
-        console.log("Offline or Sheets URL missing.");
+        console.log("Offline or Sheets URL missing. Queued for later.");
     }
 }
 window.addEventListener('online', processSheetsQueue);
 
-// --- CSV EXPORT ---
+// --- 8. CSV EXPORT ---
 function downloadCSV() {
     let csvContent = "data:text/csv;charset=utf-8,Date,Session Count,Grand Total\n";
     history.forEach(row => {
