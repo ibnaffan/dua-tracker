@@ -40,21 +40,55 @@ function changeAudio() {
 }
 
 // --- 3. GATEKEEPER (LOGIN) ---
+// --- 3. GATEKEEPER (LOGIN) ---
+
+// Allow pressing "Enter" to submit token
+document.getElementById("tokenInput").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        verifyToken();
+    }
+});
+
 async function verifyToken() {
     const inputToken = document.getElementById('tokenInput').value.trim();
     if (!inputToken) return;
 
-    // The hidden backdoor! Valid tokens:
-    if (inputToken === "admin-master" || inputToken === "guest-01") {
+    // 1. The Master Bypass (For you)
+    if (inputToken === "admin-master") {
         localStorage.setItem('dua_activeToken', inputToken);
         initializeUserData(inputToken);
         return; 
     }
 
-    // NEW: Generic error so others don't know the master token
-    const errorEl = document.getElementById('loginError');
-    errorEl.innerText = "ACCESS DENIED: Invalid Token.";
-    errorEl.style.display = 'block';
+    // 2. THE FIREBASE CHECK (This is what was missing!)
+    try {
+        // This asks Firebase: "Does 'asif' exist in the valid_tokens folder?"
+        const docRef = await db.collection("valid_tokens").doc(inputToken).get();
+        
+        if (docRef.exists) {
+            // SUCCESS! Token is valid. Let them in.
+            localStorage.setItem('dua_activeToken', inputToken);
+            initializeUserData(inputToken);
+        } else {
+            // FAILED! Token doesn't exist.
+            const errorEl = document.getElementById('loginError');
+            errorEl.innerText = "ACCESS DENIED: Invalid Token.";
+            errorEl.style.display = 'block';
+        }
+    } catch (error) {
+        console.error("Authentication Error:", error);
+        
+        // Offline Fallback: If internet goes down but they logged in before, let them in.
+        if (localStorage.getItem('dua_grandTotal_' + inputToken)) {
+            localStorage.setItem('dua_activeToken', inputToken);
+            initializeUserData(inputToken);
+        } else {
+            const errorEl = document.getElementById('loginError');
+            errorEl.innerText = "NETWORK ERROR: Cannot verify new token while offline.";
+            errorEl.style.display = 'block';
+        }
+    }
 }
 
 function initializeUserData(token) {
