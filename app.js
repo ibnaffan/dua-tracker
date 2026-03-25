@@ -128,7 +128,7 @@ function addManual() {
 }
 
 // --- 5. CLOUD & SHEET SYNCING ---
-const GOOGLE_SHEETS_URL = "https://ibnaffan.github.io/dua-tracker/"; 
+const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec"; 
 
 function saveSession() {
     if (dailyCount === 0) return;
