@@ -1,4 +1,3 @@
-// Paste your Firebase config here!
 const firebaseConfig = {
   apiKey: "AIzaSyDbpRlCkuYrHN9Gd01VIw1uH9UuaJLPmAE",
   authDomain: "op-1-tracker.firebaseapp.com",
@@ -23,31 +22,36 @@ let history = [];
 let sheetsQueue = [];
 let isWeatherPlaying = false; 
 
-// 🌟 VAPORWAVE 3D OCEAN VARIABLES
-let scene, camera, renderer, oceanGeometry, oceanMesh, oceanWireframe, clock;
-let splashParticles, splashGeometry, flashLight;
+// 🌟 LIQUID CHROME 3D OCEAN VARIABLES
+let scene, camera, renderer, oceanGeometry, oceanMesh, clock;
+let splashParticles, splashGeometry, flashLight, moonLight;
 
 window.onload = () => {
     changeAudio();
-    init3DOcean(); // Fire up the new Vaporwave Engine
+    init3DOcean(); 
     if (activeToken) { initializeUserData(activeToken); }
 };
 
 // --- 3. THE 3D CYBER-OCEAN ENGINE ---
 function init3DOcean() {
     scene = new THREE.Scene();
-    // Vaporwave fog: deep, atmospheric, and dark
-    scene.fog = new THREE.FogExp2(0x000205, 0.015); 
+    scene.fog = new THREE.FogExp2(0x020202, 0.015); // Dark grey/black fog
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-    camera.position.set(0, 12, 50); 
+    camera.position.set(0, 15, 60); 
     camera.lookAt(0, 5, -20);
 
     let ambient = new THREE.AmbientLight(0x222222);
     scene.add(ambient);
 
-    flashLight = new THREE.PointLight(0x00FFFF, 0, 300);
-    flashLight.position.set(0, 30, -40);
+    // 🌟 NEW: A sharp, bright light to create those intense liquid silver highlights
+    moonLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    moonLight.position.set(100, 100, -50);
+    scene.add(moonLight);
+
+    // The glowing theme light (Cyan/Purple/Gold) that the metal will reflect
+    flashLight = new THREE.PointLight(0x00FFFF, 2, 400);
+    flashLight.position.set(0, 40, -40);
     scene.add(flashLight);
 
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -59,33 +63,24 @@ function init3DOcean() {
         container.appendChild(renderer.domElement);
     }
 
-    // THE CHAOTIC OCEAN MESH
-    oceanGeometry = new THREE.PlaneGeometry(400, 400, 120, 120);
+    // 🌟 INCREASED RESOLUTION for smoother micro-ripples
+    oceanGeometry = new THREE.PlaneGeometry(400, 400, 180, 180);
     oceanGeometry.rotateX(-Math.PI / 2);
 
-    // 🌟 UPGRADE: Liquid Metal Vaporwave Base
-    let oceanMaterial = new THREE.MeshStandardMaterial({
-        color: 0x000205, // Deep void black/blue
-        roughness: 0.1,  // Very glossy
-        metalness: 0.8,  // Acts like liquid chrome
-        flatShading: true
+    // 🌟 UPGRADE: High-end Liquid Chrome / Mercury Material
+    let oceanMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x444444,        // Silver/Grey base
+        metalness: 1.0,         // 100% reflective metal
+        roughness: 0.1,         // Ultra smooth
+        clearcoat: 1.0,         // Adds a "wet" glossy layer on top
+        clearcoatRoughness: 0.1,
+        flatShading: false      // MUST BE FALSE to get the smooth look from your image!
     });
-    oceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
     
-    // 🌟 UPGRADE: Glowing Vector Additive Grid
-    let wireframeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00FFFF, 
-        wireframe: true,
-        transparent: true,
-        opacity: 0.25, // Stronger visibility
-        blending: THREE.AdditiveBlending // Makes the grid literally glow like neon light
-    });
-    oceanWireframe = new THREE.Mesh(oceanGeometry, wireframeMaterial);
-
+    oceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
     scene.add(oceanMesh);
-    scene.add(oceanWireframe);
 
-    // THE IMPACT SPLASH SYSTEM
+    // THE IMPACT SPLASH SYSTEM (Kept the neon splashes!)
     const particleCount = 2000;
     splashGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
@@ -137,23 +132,23 @@ function animateOcean() {
     const positions = oceanGeometry.attributes.position;
     let maxLocalWaveHeight = 0;
 
-    const stormMultiplier = isWeatherPlaying ? 3.5 : 0.3; 
-    const speedMultiplier = isWeatherPlaying ? 1.5 : 0.5;
+    const stormMultiplier = isWeatherPlaying ? 3.5 : 0.4; 
+    const speedMultiplier = isWeatherPlaying ? 1.5 : 0.4;
 
-    // 🌟 UPGRADE: Infinite Continuous Rolling (No more snapping resets!)
-    // We add time to the Z-axis math so the waves physically roll toward the camera
-    const forwardFlow = time * 20 * speedMultiplier;
+    const forwardFlow = time * 15 * speedMultiplier;
 
     for (let i = 0; i < positions.count; i++) {
         const x = positions.getX(i);
         const z = positions.getZ(i);
 
-        // We use (z + forwardFlow) to animate the waves endlessly
         const wave1 = Math.sin(x * 0.02 + time * speedMultiplier) * Math.cos((z + forwardFlow) * 0.02) * 4;
         const wave2 = Math.sin(x * 0.05 - time * speedMultiplier * 1.2) * Math.sin((z + forwardFlow) * 0.04) * 2.5;
         const wave3 = Math.cos(x * 0.1 + (z + forwardFlow) * 0.1) * 1.5;
         
-        const finalHeight = (wave1 + wave2 + wave3) * stormMultiplier;
+        // 🌟 NEW: High-frequency micro-ripples to match your image texture!
+        const wave4 = Math.sin(x * 0.3 + time * 3) * Math.cos((z + forwardFlow) * 0.3) * 0.4;
+        
+        const finalHeight = (wave1 + wave2 + wave3 + wave4) * stormMultiplier;
         positions.setY(i, finalHeight);
 
         if (z > 30 && z < 50) {
@@ -162,10 +157,9 @@ function animateOcean() {
     }
 
     oceanGeometry.attributes.position.needsUpdate = true;
+    
+    // 🌟 THIS makes the shadows and highlights smooth like real water!
     oceanGeometry.computeVertexNormals(); 
-
-    // MESH REMAINS STATIC - Only the mathematics move, creating a flawless infinite loop!
-    // (We deleted the code that was snapping the position.z back to 0)
 
     const splashPos = splashGeometry.attributes.position.array;
     for (let i = 0; i < splashPos.length / 3; i++) {
@@ -182,11 +176,12 @@ function animateOcean() {
     }
 
     if (isWeatherPlaying && Math.random() > 0.97) {
-        flashLight.intensity = 15 + Math.random() * 20;
+        flashLight.intensity = 20 + Math.random() * 30;
         flashLight.position.x = (Math.random() - 0.5) * 150;
         flashLight.position.z = -20 - Math.random() * 50;
     } else {
-        flashLight.intensity = Math.max(0, flashLight.intensity - 1.5);
+        // Keeps a subtle theme glow running even when storm is off
+        flashLight.intensity = Math.max(3, flashLight.intensity - 1.5);
     }
 
     renderer.render(scene, camera);
@@ -296,9 +291,7 @@ function updateThemeColors(percentage) {
         currentHex = 0xFFD700;
     }
 
-    if (oceanWireframe && oceanWireframe.material) {
-        oceanWireframe.material.color.setHex(currentHex);
-    }
+    // 🌟 Make the lighting and splashes match your theme!
     if (flashLight) flashLight.color.setHex(currentHex);
     if (splashParticles && splashParticles.material) {
         splashParticles.material.color.setHex(currentHex);
