@@ -6,13 +6,16 @@
     <title>OP-1 DU'A TRACKER</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
+    <div class="clouds"></div>
+    <div class="scanlines"></div>
+
     <div id="loginScreen" class="dashboard-container" style="text-align: center; max-width: 400px;">
-        <h1 class="glow-text" style="margin-bottom: 2rem;">SYSTEM ACCESS</h1>
+        <h1 class="glow-text glitch-hover" style="margin-bottom: 2rem;">SYSTEM ACCESS</h1>
         <p style="color: #888; margin-bottom: 1rem;">Enter your access token to continue.</p>
         <input type="text" id="tokenInput" class="neon-input" placeholder="Enter Token..." style="width: 100%; margin-bottom: 1rem; text-align: center;">
         <button class="secondary-btn" style="width: 100%;" onclick="verifyToken()">AUTHENTICATE</button>
@@ -21,16 +24,19 @@
 
     <div id="dashboard" class="dashboard-container" style="display: none;">
         <header>
-            <h1 class="glow-text">OP-1 TRACKER</h1>
+            <h1 class="glow-text glitch-hover">OP-1 TRACKER</h1>
         </header>
 
         <div class="media-center">
+            <button id="weatherBtn" class="small-btn" style="width: 100%; border-color: #555; color: #888; margin-bottom: 15px;" onclick="toggleWeather()">🌧️ AMBIENT STORM: OFF</button>
+            <audio id="weatherAudio" loop crossorigin="anonymous" src="https://actions.google.com/sounds/v1/weather/thunderstorm.ogg"></audio>
+
             <span class="label">LIVE RECITATION STREAM</span>
             <select id="reciterSelect" class="neon-input" style="width: 100%; margin-bottom: 10px;" onchange="changeAudio()">
-                <option value="https://qurango.net/radio/mishary_alafasi">Mishary Rashid Alafasy (Continuous)</option>
-                <option value="https://qurango.net/radio/abdulbasit_abdulsamad_mojawwad">Abdul Basit (Continuous)</option>
-                <option value="https://qurango.net/radio/yasser_aldosari">Yasser Al-Dosari (Continuous)</option>
-                <option value="https://qurango.net/radio/maher_al_muaiqly">Maher Al Muaiqly (Continuous)</option>
+                <option value="https://qurango.net/radio/mishary_alafasi">Mishary Rashid Alafasy</option>
+                <option value="https://qurango.net/radio/abdulbasit_abdulsamad_mojawwad">Abdul Basit</option>
+                <option value="https://qurango.net/radio/yasser_aldosari">Yasser Al-Dosari</option>
+                <option value="https://qurango.net/radio/maher_al_muaiqly">Maher Al Muaiqly</option>
             </select>
             <audio id="quranAudio" controls crossorigin="anonymous"></audio>
         </div>
@@ -41,9 +47,10 @@
                 <span class="value" id="targetDisplay">1,000,000</span>
                 <button onclick="editTarget()" style="background: none; border: none; color: #888; cursor: pointer; position: absolute; top: 10px; right: 10px;">✎</button>
             </div>
-            <div class="stat-box glow-box">
+            <div class="stat-box glow-box" style="position: relative;">
                 <span class="label">GRAND TOTAL</span>
                 <span class="value dynamic-text" id="grandTotal">0</span>
+                <button onclick="resetTotal()" style="background: none; border: none; color: #ff3333; cursor: pointer; position: absolute; top: 10px; right: 10px; font-size: 1.2rem;" title="Reset Total">⟲</button>
             </div>
             <div class="stat-box">
                 <span class="label">LEFT TO GO</span>
@@ -69,7 +76,7 @@
                 <button class="small-btn" onclick="addManual()">ADD</button>
             </div>
             
-            <button class="main-btn" id="reciteBtn" onclick="recite()">
+            <button class="main-btn" id="reciteBtn" onclick="recite(event)">
                 <span class="btn-text">+1</span>
             </button>
 
