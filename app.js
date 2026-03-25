@@ -10,7 +10,7 @@ const firebaseConfig = {
   measurementId: "G-N4E52W26LS"
 };
 
-Initialize Firebase (Uncomment when you paste your config)
+//Initialize Firebase (Uncomment when you paste your config)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 db.enablePersistence().catch(err => console.log("Offline mode error:", err));
