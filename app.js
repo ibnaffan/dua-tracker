@@ -15,95 +15,87 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 db.enablePersistence().catch(err => console.log("Offline mode error:", err));
 
-// --- 1. STATE VARIABLES ---
+// --- 2. STATE VARIABLES ---
 let activeToken = localStorage.getItem('dua_activeToken') || null;
 let userTarget = 1000000;
 let grandTotal = 0;
 let dailyCount = 0;
 let history = [];
 let sheetsQueue = [];
+let isWeatherPlaying = false; // Tracks storm audio
 
-// --- 2. INITIALIZATION ---
 window.onload = () => {
-    changeAudio(); // Load the default audio stream
-    if (activeToken) {
-        initializeUserData(activeToken);
-    }
+    changeAudio();
+    if (activeToken) { initializeUserData(activeToken); }
 };
 
+// --- AUDIO CONTROLS ---
 function changeAudio() {
     const audioEl = document.getElementById('quranAudio');
     const selectEl = document.getElementById('reciterSelect');
-    if (audioEl && selectEl) {
-        audioEl.src = selectEl.value;
+    if (audioEl && selectEl) { audioEl.src = selectEl.value; }
+}
+
+function toggleWeather() {
+    const audio = document.getElementById('weatherAudio');
+    const btn = document.getElementById('weatherBtn');
+    if (isWeatherPlaying) {
+        audio.pause();
+        btn.innerText = "🌧️ AMBIENT STORM: OFF";
+        btn.style.color = "#888"; btn.style.borderColor = "#555";
+        isWeatherPlaying = false;
+    } else {
+        audio.play();
+        btn.innerText = "🌧️ AMBIENT STORM: ON";
+        btn.style.color = "var(--theme-color)"; btn.style.borderColor = "var(--theme-color)";
+        isWeatherPlaying = true;
     }
 }
 
 // --- 3. GATEKEEPER (LOGIN) ---
-// --- 3. GATEKEEPER (LOGIN) ---
-
-// Allow pressing "Enter" to submit token
 document.getElementById("tokenInput").addEventListener("keypress", function(event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        verifyToken();
-    }
+    if (event.key === "Enter") { event.preventDefault(); verifyToken(); }
 });
 
 async function verifyToken() {
     const inputToken = document.getElementById('tokenInput').value.trim();
     if (!inputToken) return;
 
-    // 1. The Master Bypass (For you)
     if (inputToken === "admin-master") {
         localStorage.setItem('dua_activeToken', inputToken);
         initializeUserData(inputToken);
         return; 
     }
 
-    // 2. THE FIREBASE CHECK (This is what was missing!)
     try {
-        // This asks Firebase: "Does 'asif' exist in the valid_tokens folder?"
         const docRef = await db.collection("valid_tokens").doc(inputToken).get();
-        
         if (docRef.exists) {
-            // SUCCESS! Token is valid. Let them in.
             localStorage.setItem('dua_activeToken', inputToken);
             initializeUserData(inputToken);
         } else {
-            // FAILED! Token doesn't exist.
-            const errorEl = document.getElementById('loginError');
-            errorEl.innerText = "ACCESS DENIED: Invalid Token.";
-            errorEl.style.display = 'block';
+            document.getElementById('loginError').innerText = "ACCESS DENIED: Invalid Token.";
+            document.getElementById('loginError').style.display = 'block';
         }
     } catch (error) {
-        console.error("Authentication Error:", error);
-        
-        // Offline Fallback: If internet goes down but they logged in before, let them in.
         if (localStorage.getItem('dua_grandTotal_' + inputToken)) {
             localStorage.setItem('dua_activeToken', inputToken);
             initializeUserData(inputToken);
         } else {
-            const errorEl = document.getElementById('loginError');
-            errorEl.innerText = "NETWORK ERROR: Cannot verify new token while offline.";
-            errorEl.style.display = 'block';
+            document.getElementById('loginError').innerText = "NETWORK ERROR: Cannot verify while offline.";
+            document.getElementById('loginError').style.display = 'block';
         }
     }
 }
 
 function initializeUserData(token) {
     activeToken = token;
-    
-    // Hide login screen, reveal dashboard
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('currentUserDisplay').innerText = token;
 
-    // Load User Target
     let savedTarget = parseInt(localStorage.getItem('dua_target_' + token));
     userTarget = isNaN(savedTarget) ? 1000000 : savedTarget;
 
-    // Load Grand Total
     grandTotal = parseInt(localStorage.getItem('dua_grandTotal_' + token));
     if (isNaN(grandTotal)) {
         grandTotal = (token === "admin-master") ? 1100 : 0; 
@@ -112,61 +104,46 @@ function initializeUserData(token) {
     
     history = JSON.parse(localStorage.getItem('dua_history_' + token)) || [];
     sheetsQueue = JSON.parse(localStorage.getItem('dua_sheetsQueue_' + token)) || [];
-    
     updateUI();
 }
 
-function logout() {
-    localStorage.removeItem('dua_activeToken');
-    location.reload(); 
-}
+function logout() { localStorage.removeItem('dua_activeToken'); location.reload(); }
 
-// --- 4. DYNAMIC COLOR SHIFT ENGINE ---
+// --- 4. DYNAMIC COLOR SHIFT ---
 function updateThemeColors(percentage) {
     const root = document.documentElement;
-    
     if (percentage < 33) {
-        // Neon Cyan
         root.style.setProperty('--theme-color', '#00FFFF');
         root.style.setProperty('--theme-glow', 'rgba(0, 255, 255, 0.5)');
         root.style.setProperty('--theme-bg', 'rgba(0, 255, 255, 0.1)');
     } else if (percentage < 66) {
-        // Neon Purple
         root.style.setProperty('--theme-color', '#B026FF');
         root.style.setProperty('--theme-glow', 'rgba(176, 38, 255, 0.5)');
         root.style.setProperty('--theme-bg', 'rgba(176, 38, 255, 0.1)');
     } else {
-        // Neon Gold
         root.style.setProperty('--theme-color', '#FFD700');
         root.style.setProperty('--theme-glow', 'rgba(255, 215, 0, 0.5)');
         root.style.setProperty('--theme-bg', 'rgba(255, 215, 0, 0.1)');
     }
 }
 
-// --- 5. DASHBOARD UI UPDATES ---
+// --- 5. UI UPDATES & RESET ---
 function updateUI() {
     document.getElementById('targetDisplay').innerText = userTarget.toLocaleString();
     document.getElementById('grandTotal').innerText = grandTotal.toLocaleString();
     
-    // Ensure "Left to Go" doesn't go negative
     const remaining = Math.max(0, userTarget - grandTotal);
     document.getElementById('leftToGo').innerText = remaining.toLocaleString();
     document.getElementById('dailyCount').innerText = dailyCount.toLocaleString();
 
-    // Math for SVG Speedometer & Colors
     let percentage = (grandTotal / userTarget) * 100;
     if (percentage > 100) percentage = 100; 
 
     updateThemeColors(percentage);
 
-    // Speedometer Fill Math
     const speedFill = document.getElementById('speedFill');
-    if (speedFill) {
-        const strokeOffset = 283 - (percentage / 100) * 283;
-        speedFill.style.strokeDashoffset = strokeOffset;
-    }
+    if (speedFill) { speedFill.style.strokeDashoffset = 283 - (percentage / 100) * 283; }
 
-    // Render History
     const logContainer = document.getElementById('historyLog');
     if (logContainer) {
         logContainer.innerHTML = '';
@@ -178,7 +155,6 @@ function updateUI() {
     }
 }
 
-// --- 6. CORE ACTIONS ---
 function editTarget() {
     const newTarget = prompt("Enter your new target number (e.g., 500000):", userTarget);
     if (newTarget !== null) {
@@ -191,11 +167,46 @@ function editTarget() {
     }
 }
 
-function recite() {
+function resetTotal() {
+    if (confirm("⚠️ WARNING: Are you sure you want to completely reset your Grand Total back to 0?")) {
+        grandTotal = 0;
+        localStorage.setItem('dua_grandTotal_' + activeToken, grandTotal);
+        updateUI();
+    }
+}
+
+// --- 6. CORE ACTIONS & PARTICLES ---
+function recite(event) {
     dailyCount++;
     grandTotal++;
     localStorage.setItem('dua_grandTotal_' + activeToken, grandTotal);
     updateUI();
+    createParticle(event);
+}
+
+function createParticle(e) {
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+    particle.innerText = '+1';
+    
+    let x, y;
+    if (e && (e.clientX || (e.touches && e.touches.length > 0))) {
+        x = e.clientX || e.touches[0].clientX;
+        y = e.clientY || e.touches[0].clientY;
+    } else {
+        const btn = document.getElementById('reciteBtn');
+        const rect = btn.getBoundingClientRect();
+        x = rect.left + rect.width / 2;
+        y = rect.top + rect.height / 2;
+    }
+
+    x += (Math.random() - 0.5) * 40;
+    y += (Math.random() - 0.5) * 40;
+
+    particle.style.left = `${x}px`;
+    particle.style.top = `${y}px`;
+    document.body.appendChild(particle);
+    setTimeout(() => particle.remove(), 800);
 }
 
 function addManual() {
@@ -226,7 +237,6 @@ function saveSession() {
 
     history.push(newSession);
     localStorage.setItem('dua_history_' + activeToken, JSON.stringify(history));
-
     sheetsQueue.push(newSession);
     localStorage.setItem('dua_sheetsQueue_' + activeToken, JSON.stringify(sheetsQueue));
     processSheetsQueue();
