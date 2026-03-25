@@ -24,76 +24,174 @@ let history = [];
 let sheetsQueue = [];
 let isWeatherPlaying = false; 
 
-// 🌟 THREE.JS CLOUD VARIABLES
-let scene, camera, renderer, cloudParticles = [], flashLight;
-
-window.onload = () => {
-    changeAudio();
-    init3DClouds(); // Start 3D Engine
-    if (activeToken) { initializeUserData(activeToken); }
-};
-
-// --- 3. 🌟 ULTRA-REAL 3D CLOUD ENGINE ---
-function createCloudTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256; canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.5)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    ctx.fillStyle = gradient; ctx.fillRect(0, 0, 256, 256);
-    return new THREE.CanvasTexture(canvas);
-}
+// 🌟 ADVANCED 3D OCEAN VARIABLES
+let scene, camera, renderer, oceanGeometry, oceanMesh, oceanWireframe, clock;
+let splashParticles, splashGeometry;
 
 function init3DClouds() {
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.001);
+    scene.fog = new THREE.FogExp2(0x000510, 0.012); // Deep, dark atmospheric fog
 
+    // Position camera low and angled up to make waves look towering
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-    camera.position.z = 1; camera.rotation.x = 1.16; camera.rotation.y = -0.12; camera.rotation.z = 0.27;
+    camera.position.set(0, 12, 50); 
+    camera.lookAt(0, 5, -20);
 
-    let ambient = new THREE.AmbientLight(0x555555);
+    let ambient = new THREE.AmbientLight(0x222222);
     scene.add(ambient);
 
-    // Lightning flash for thunderstorm!
-    flashLight = new THREE.PointLight(0x00FFFF, 30, 500, 1.7);
-    flashLight.position.set(200,300,100);
+    // Dynamic lightning core
+    flashLight = new THREE.PointLight(0x00FFFF, 0, 300);
+    flashLight.position.set(0, 30, -40);
     scene.add(flashLight);
 
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById("canvas-container").innerHTML = ''; 
     document.getElementById("canvas-container").appendChild(renderer.domElement);
 
-    let cloudGeo = new THREE.PlaneGeometry(500,500);
-    let cloudMaterial = new THREE.MeshLambertMaterial({
-        map: createCloudTexture(), transparent: true, opacity: 0.4,
-        color: 0x00FFFF, blending: THREE.AdditiveBlending
+    // 1. THE CHAOTIC OCEAN MESH
+    oceanGeometry = new THREE.PlaneGeometry(400, 400, 120, 120);
+    oceanGeometry.rotateX(-Math.PI / 2);
+
+    // Dark, glossy water base
+    let oceanMaterial = new THREE.MeshPhongMaterial({
+        color: 0x000a14, 
+        shininess: 150,
+        specular: 0x00FFFF, // Highlights catch the neon colors
+        flatShading: true
+    });
+    oceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
+    
+    // Cyberpunk grid overlay
+    let wireframeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00FFFF, 
+        wireframe: true,
+        transparent: true,
+        opacity: 0.1
+    });
+    oceanWireframe = new THREE.Mesh(oceanGeometry, wireframeMaterial);
+
+    scene.add(oceanMesh);
+    scene.add(oceanWireframe);
+
+    // 2. THE IMPACT SPLASH SYSTEM
+    const particleCount = 2000;
+    splashGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = [];
+
+    for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = 0; // x
+        positions[i * 3 + 1] = -100; // y (hidden initially)
+        positions[i * 3 + 2] = 0; // z
+        velocities.push({
+            x: (Math.random() - 0.5) * 2,
+            y: Math.random() * 3 + 1,
+            z: Math.random() * 2
+        });
+    }
+
+    splashGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    let splashMaterial = new THREE.PointsMaterial({
+        color: 0x00FFFF,
+        size: 0.8,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
     });
 
-    for(let p=0; p<40; p++) {
-        let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
-        cloud.position.set(Math.random()*800 -400, 500, Math.random()*500 - 450);
-        cloud.rotation.x = 1.16; cloud.rotation.y = -0.12; cloud.rotation.z = Math.random()*360;
-        cloudParticles.push(cloud);
-        scene.add(cloud);
-    }
-    animateClouds();
+    splashParticles = new THREE.Points(splashGeometry, splashMaterial);
+    scene.add(splashParticles);
+
+    clock = new THREE.Clock();
+    animateOcean();
 }
 
-function animateClouds() {
-    cloudParticles.forEach(p => { p.rotation.z -= 0.0015; }); // Slowly rotate 3D fog
-    
-    // Sync lightning flashes to thunderstorm button!
-    if (isWeatherPlaying && Math.random() > 0.96 || flashLight.power > 100) {
-        if(flashLight.power < 100) flashLight.position.set(Math.random()*400, 300 + Math.random()*200, 100);
-        flashLight.power = 50 + Math.random() * 500;
-    } else {
-        flashLight.power = 0; // Turn off lightning if storm is off
+function triggerSplash(waveHeight) {
+    const positions = splashGeometry.attributes.position.array;
+    // Only trigger if the wave is massive enough
+    if (waveHeight > 15) {
+        for (let i = 0; i < 300; i++) { // Fire 300 particles per impact
+            const index = Math.floor(Math.random() * (positions.length / 3)) * 3;
+            // Spawn them near the "dashboard" edges (Camera Z is 50)
+            positions[index] = (Math.random() - 0.5) * 60; // Spread across X
+            positions[index + 1] = 5 + Math.random() * 5;  // Base height
+            positions[index + 2] = 40 + Math.random() * 10; // Z depth near camera
+        }
     }
-    
+}
+
+function animateOcean() {
+    requestAnimationFrame(animateOcean);
+
+    const time = clock.getElapsedTime();
+    const positions = oceanGeometry.attributes.position;
+    let maxLocalWaveHeight = 0;
+
+    // The Storm Multiplier (Tied to your UI toggle!)
+    // Calm = 0.3 (gentle swells), Storm = 3.5 (terrifying mountains)
+    const stormMultiplier = isWeatherPlaying ? 3.5 : 0.3; 
+    const speedMultiplier = isWeatherPlaying ? 1.5 : 0.5;
+
+    // 1. CHAOTIC WAVE MATHEMATICS (Pseudo-Gerstner layering)
+    for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i);
+        const z = positions.getZ(i);
+
+        // Layer 1: Broad, sweeping swells
+        const wave1 = Math.sin(x * 0.02 + time * speedMultiplier) * Math.cos(z * 0.02 + time * speedMultiplier) * 4;
+        // Layer 2: Fast, sharp cross-chops
+        const wave2 = Math.sin(x * 0.05 - time * speedMultiplier * 1.2) * Math.sin(z * 0.04 + time) * 2.5;
+        // Layer 3: Unpredictable, localized peaks
+        const wave3 = Math.cos(x * 0.1 + z * 0.1 + time * speedMultiplier * 2) * 1.5;
+        
+        const finalHeight = (wave1 + wave2 + wave3) * stormMultiplier;
+        positions.setY(i, finalHeight);
+
+        // Check wave height near the camera to trigger splashes
+        if (z > 30 && z < 50) {
+            if (finalHeight > maxLocalWaveHeight) maxLocalWaveHeight = finalHeight;
+        }
+    }
+
+    oceanGeometry.attributes.position.needsUpdate = true;
+    oceanGeometry.computeVertexNormals(); 
+
+    // Forward motion simulation
+    oceanMesh.position.z += 0.15 * speedMultiplier;
+    oceanWireframe.position.z += 0.15 * speedMultiplier;
+    if (oceanMesh.position.z > 20) {
+        oceanMesh.position.z = 0;
+        oceanWireframe.position.z = 0;
+    }
+
+    // 2. ANIMATE SPLASH PARTICLES
+    const splashPos = splashGeometry.attributes.position.array;
+    for (let i = 0; i < splashPos.length / 3; i++) {
+        if (splashPos[i * 3 + 1] > -50) { // If particle is active
+            splashPos[i * 3] += (Math.random() - 0.5) * 0.5; // Drift X
+            splashPos[i * 3 + 1] -= 0.3; // Gravity fall Y
+            splashPos[i * 3 + 2] += 0.2; // Push toward camera Z
+        }
+    }
+    splashGeometry.attributes.position.needsUpdate = true;
+
+    // Trigger splash impacts randomly when storm waves peak near the dashboard
+    if (isWeatherPlaying && Math.random() > 0.95) {
+        triggerSplash(maxLocalWaveHeight);
+    }
+
+    // 3. AMBIENT LIGHTNING SYNC
+    if (isWeatherPlaying && Math.random() > 0.97) {
+        flashLight.intensity = 15 + Math.random() * 20;
+        flashLight.position.x = (Math.random() - 0.5) * 150;
+        flashLight.position.z = -20 - Math.random() * 50;
+    } else {
+        flashLight.intensity = Math.max(0, flashLight.intensity - 1.5);
+    }
+
     renderer.render(scene, camera);
-    requestAnimationFrame(animateClouds);
 }
 
 // --- 4. AUDIO CONTROLS (BGM Config) ---
