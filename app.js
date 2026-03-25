@@ -128,7 +128,7 @@ function addManual() {
 }
 
 // --- 5. CLOUD & SHEET SYNCING ---
-const GOOGLE_SHEETS_URL = "PASTE_YOUR_WEB_APP_URL_HERE"; 
+const GOOGLE_SHEETS_URL = "https://ibnaffan.github.io/dua-tracker/"; 
 
 function saveSession() {
     if (dailyCount === 0) return;
