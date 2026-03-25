@@ -11,7 +11,21 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-    <div class="dashboard-container">
+    <div id="loginScreen" class="dashboard-container" style="text-align: center; max-width: 400px;">
+        <h1 class="glow-text" style="margin-bottom: 2rem;">SYSTEM ACCESS</h1>
+        <p style="color: #888; margin-bottom: 1rem;">Enter your access token to continue.</p>
+        <input type="text" id="tokenInput" class="neon-input" placeholder="Enter Token..." style="width: 100%; margin-bottom: 1rem; text-align: center;">
+        <button class="secondary-btn" style="width: 100%;" onclick="verifyToken()">AUTHENTICATE</button>
+        <p id="loginError" style="color: #ff3333; margin-top: 1rem; display: none;">ACCESS DENIED: Invalid Token</p>
+    </div>
+
+    <div id="dashboard" class="dashboard-container" style="display: none;">
+        <div style="text-align: center; margin-top: 2rem; border-top: 1px solid #333; padding-top: 1rem;">
+            <p style="color: #555; font-size: 0.8rem;">LOGGED IN AS: <span id="currentUserDisplay" class="cyan-text"></span></p>
+            <button class="secondary-btn" style="margin-top: 10px; border-color: #555; color: #aaa; font-size: 0.7rem;" onclick="logout()">LOGOUT</button>
+        </div>
+    </div>
+	<div class="dashboard-container">
         <header>
             <h1 class="glow-text">OP-1 TRACKER</h1>
         </header>
