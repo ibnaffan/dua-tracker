@@ -187,3 +187,19 @@ async function processSheetsQueue() {
     }
 }
 window.addEventListener('online', processSheetsQueue);
+// --- 6. DOWNLOAD LOCAL CSV SPREADSHEET ---
+function downloadCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,Date,Session Count,Grand Total\n";
+    
+    history.forEach(row => {
+        csvContent += `"${row.date}",${row.count},${row.grandTotal || ''}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "dua_tracker_backup.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
