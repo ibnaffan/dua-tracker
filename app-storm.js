@@ -36,21 +36,24 @@ window.onload = () => {
 // --- THE 3D CYBER-OCEAN ENGINE ---
 function init3DOcean() {
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020202, 0.015); // Dark atmospheric fog
+    scene.fog = new THREE.FogExp2(0x020202, 0.015); 
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
     camera.position.set(0, 15, 60); 
     camera.lookAt(0, 5, -20);
 
-    let ambient = new THREE.AmbientLight(0x333333);
+    // 🌟 UPGRADED LIGHTING: So the liquid metal is actually visible!
+    let ambient = new THREE.AmbientLight(0x777777); // Brighter base light
     scene.add(ambient);
 
-    // Sharp, bright light to create intense liquid silver highlights
-    moonLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    moonLight.position.set(100, 100, -50);
+    // Hemisphere light simulates a glowing sky to reflect off the metal
+    let hemiLight = new THREE.HemisphereLight(0xffffff, 0x111122, 1.2); 
+    scene.add(hemiLight);
+
+    moonLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    moonLight.position.set(0, 50, -50); // Pointing straight down at the water
     scene.add(moonLight);
 
-    // Glowing theme light (Cyan/Purple/Gold)
     flashLight = new THREE.PointLight(0x00FFFF, 2, 400);
     flashLight.position.set(0, 40, -40);
     scene.add(flashLight);
@@ -64,22 +67,21 @@ function init3DOcean() {
         container.appendChild(renderer.domElement);
     }
 
-    // High resolution for smooth micro-ripples
     oceanGeometry = new THREE.PlaneGeometry(400, 400, 180, 180);
     oceanGeometry.rotateX(-Math.PI / 2);
 
-    // 🌟 PURE LIQUID CHROME MATERIAL (NO WIREFRAME!)
+    // 🌟 UPGRADED MATERIAL: Lighter silver base so it pops!
     let oceanMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x555555,        // Silver base
-        metalness: 1.0,         // 100% reflective metal
-        roughness: 0.15,        // Smooth but scatters light like water
-        clearcoat: 1.0,         // "Wet" glossy top layer
+        color: 0x999999,        // Much lighter silver
+        metalness: 0.85,        // Dropped slightly from 1.0 so color shows through
+        roughness: 0.1,         // Ultra smooth
+        clearcoat: 1.0,         
         clearcoatRoughness: 0.1,
-        flatShading: false      // Smooth curves!
+        flatShading: false      
     });
     
     oceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
-    scene.add(oceanMesh); // Grid is GONE. Only pure liquid remains.
+    scene.add(oceanMesh); 
 
     // THE IMPACT SPLASH SYSTEM
     const particleCount = 2000;
@@ -144,8 +146,6 @@ function animateOcean() {
         const wave1 = Math.sin(x * 0.02 + time * speedMultiplier) * Math.cos((z + forwardFlow) * 0.02) * 4;
         const wave2 = Math.sin(x * 0.05 - time * speedMultiplier * 1.2) * Math.sin((z + forwardFlow) * 0.04) * 2.5;
         const wave3 = Math.cos(x * 0.1 + (z + forwardFlow) * 0.1) * 1.5;
-        
-        // Micro-ripples for the detailed liquid look
         const wave4 = Math.sin(x * 0.3 + time * 3) * Math.cos((z + forwardFlow) * 0.3) * 0.4;
         
         const finalHeight = (wave1 + wave2 + wave3 + wave4) * stormMultiplier;
@@ -157,7 +157,7 @@ function animateOcean() {
     }
 
     oceanGeometry.attributes.position.needsUpdate = true;
-    oceanGeometry.computeVertexNormals(); // Recalculates light hitting the water
+    oceanGeometry.computeVertexNormals(); 
 
     const splashPos = splashGeometry.attributes.position.array;
     for (let i = 0; i < splashPos.length / 3; i++) {
