@@ -7,11 +7,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Orbitron', sans-serif; }
 
 body {
-    background-color: #080808;
-    background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-color: #000000;
     color: #ffffff;
     display: flex;
     justify-content: center;
@@ -20,48 +16,51 @@ body {
     overflow-x: hidden;
 }
 
-/* NEW: INFINITE MOVING CLOUDS (Zero lag SVG) */
-.clouds {
+/* 🌟 NEW: THREE.JS CANVAS CONTAINER */
+#canvas-container {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: transparent url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="%23ffffff" opacity="0.04" d="M400,256c0-44.2-35.8-80-80-80c-7.2,0-14.1,1-20.5,2.8C285.4,142.1,249.4,112,208,112c-53,0-96,43-96,96 c0,4.8,0.4,9.4,1.1,14C78.4,229.4,52,261.3,52,300c0,46.4,37.6,84,84,84h248c48.6,0,88-39.4,88-88C472,267.4,440.3,256,400,256z"/></svg>') repeat 0 0;
-    background-size: 500px;
-    animation: drift 60s linear infinite;
-    z-index: 1;
-    pointer-events: none;
+    z-index: -2; pointer-events: none;
 }
-@keyframes drift { 100% { background-position: -500px 0; } }
 
-/* OPTIMIZED: Much lighter scanlines */
 .scanlines {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: repeating-linear-gradient(to bottom, transparent 0px, rgba(0,0,0,0.2) 2px, transparent 4px);
-    pointer-events: none; z-index: 9999;
+    background: repeating-linear-gradient(to bottom, transparent 0px, rgba(0,0,0,0.3) 2px, transparent 4px);
+    pointer-events: none; z-index: 9999; opacity: 0.6;
 }
 
+/* Made dashboard transparent to see 3D clouds */
 .dashboard-container {
-    width: 100%; max-width: 900px; background: rgba(15, 15, 15, 0.85);
-    border: 1px solid #333; border-radius: 12px; padding: 2rem;
+    width: 100%; max-width: 900px; background: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(50, 50, 50, 0.5); border-radius: 12px; padding: 2rem;
     box-shadow: 0 0 30px var(--theme-glow); backdrop-filter: blur(8px);
     transition: box-shadow 0.5s ease; z-index: 10; position: relative;
 }
 
 header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--theme-color); padding-bottom: 1rem; transition: border-color 0.5s ease; }
-.glow-text { color: var(--theme-color); text-shadow: 0 0 10px var(--theme-glow); letter-spacing: 4px; transition: all 0.5s ease; cursor: default; }
+
+/* 🌟 FIXED: Sharp Header without blur */
+.glow-text { 
+    color: var(--theme-color); 
+    text-shadow: 0 0 5px var(--theme-color); /* Crisp shadow */
+    letter-spacing: 2px; 
+    transition: all 0.3s ease; 
+    cursor: default; 
+}
 
 .glitch-hover:hover { animation: glitch 0.2s linear infinite; }
 @keyframes glitch {
     0% { transform: translate(0) }
-    20% { transform: translate(-2px, 2px) }
-    40% { transform: translate(-2px, -2px) }
-    60% { transform: translate(2px, 2px) }
-    80% { transform: translate(2px, -2px) }
+    20% { transform: translate(-3px, 3px) }
+    40% { transform: translate(-3px, -3px) }
+    60% { transform: translate(3px, 3px) }
+    80% { transform: translate(3px, -3px) }
     100% { transform: translate(0) }
 }
 
 .dynamic-text { color: var(--theme-color); transition: color 0.5s ease; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-.stat-box { background: rgba(0,0,0,0.6); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid #333; }
+.stat-box { background: rgba(0,0,0,0.5); padding: 1.5rem; border-radius: 8px; text-align: center; border: 1px solid #333; }
 .glow-box { border: 1px solid var(--theme-color); box-shadow: 0 0 15px var(--theme-glow); transition: all 0.5s ease; }
 .label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.5rem; letter-spacing: 1px; }
 .value { display: block; font-size: 1.5rem; font-weight: 700; }
@@ -73,7 +72,6 @@ header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(-
 
 .main-controls { display: flex; flex-direction: column; align-items: center; gap: 2rem; margin-bottom: 3rem; }
 
-/* OPTIMIZED: GPU Accelerated Pulse Button (No more lag!) */
 .main-btn {
     width: 150px; height: 150px; border-radius: 50%; background: var(--theme-bg); border: 4px solid var(--theme-color);
     color: var(--theme-color); font-size: 3rem; font-weight: 900; cursor: pointer; position: relative;
@@ -101,14 +99,14 @@ header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(-
     100% { transform: translateY(-80px) scale(1.5); opacity: 0; }
 }
 
-.media-center { background: rgba(0,0,0,0.6); border: 1px solid #333; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center; }
+.media-center { background: rgba(0,0,0,0.5); border: 1px solid #333; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center; }
 .neon-input { background: #000; border: 1px solid #333; color: var(--theme-color); padding: 0.5rem 1rem; border-radius: 4px; font-family: 'Orbitron', sans-serif; outline: none; transition: border 0.3s, color 0.5s; }
 .neon-input:focus { border: 1px solid var(--theme-color); box-shadow: 0 0 10px var(--theme-glow); }
 audio { width: 100%; height: 35px; outline: none; margin-top: 10px; filter: sepia(20%) hue-rotate(180deg) saturate(200%) invert(90%); }
 
-.secondary-btn, .small-btn { background: transparent; border: 1px solid var(--theme-color); color: var(--theme-color); padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 700; letter-spacing: 1px; transition: all 0.3s; }
+.secondary-btn, .small-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--theme-color); color: var(--theme-color); padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 700; letter-spacing: 1px; transition: all 0.3s; }
 .secondary-btn:hover, .small-btn:hover { background: var(--theme-bg); box-shadow: 0 0 10px var(--theme-glow); }
 
-.terminal { background: #050505; border: 1px solid #333; border-radius: 6px; padding: 1rem; height: 150px; overflow-y: auto; }
+.terminal { background: rgba(5,5,5,0.8); border: 1px solid #333; border-radius: 6px; padding: 1rem; height: 150px; overflow-y: auto; }
 .terminal-header { color: #555; font-size: 0.8rem; margin-bottom: 1rem; border-bottom: 1px dashed #333; padding-bottom: 0.5rem; }
 #historyLog { list-style: none; color: var(--theme-color); font-size: 0.9rem; line-height: 1.5; transition: color 0.5s; }
