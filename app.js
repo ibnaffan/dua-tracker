@@ -31,30 +31,39 @@ window.onload = () => {
 };
 
 // --- 3. THE GATEKEEPER LOGIC ---
+// --- 3. THE GATEKEEPER LOGIC ---
 async function verifyToken() {
     const inputToken = document.getElementById('tokenInput').value.trim();
     if (!inputToken) return;
 
+    // --- 🚨 MASTER KEY BYPASS (For immediate testing) 🚨 ---
+    // This lets you in immediately without needing Firebase to be fully set up yet.
+    if (inputToken === "admin-master" || inputToken === "guest-01") {
+        localStorage.setItem('dua_activeToken', inputToken);
+        initializeUserData(inputToken);
+        return; // Stop here, don't even check Firebase!
+    }
+    // --------------------------------------------------------
+
     try {
-        // Check Firebase to see if this token exists in the "valid_tokens" list
+        // Check Firebase to see if this token exists
         const docRef = await db.collection("valid_tokens").doc(inputToken).get();
         
         if (docRef.exists) {
-            // Token is valid! Save it and load their specific data
             localStorage.setItem('dua_activeToken', inputToken);
             initializeUserData(inputToken);
         } else {
-            // Token does not exist
             document.getElementById('loginError').style.display = 'block';
         }
     } catch (error) {
-        console.error("Authentication Error. You might be offline.", error);
-        // Offline Fallback: If they previously logged in, let them in
+        console.error("Authentication Error:", error);
+        
+        // Offline Fallback
         if (localStorage.getItem('dua_grandTotal_' + inputToken)) {
             localStorage.setItem('dua_activeToken', inputToken);
             initializeUserData(inputToken);
         } else {
-            document.getElementById('loginError').innerText = "NETWORK ERROR: Cannot verify new token while offline.";
+            document.getElementById('loginError').innerText = "NETWORK ERROR: Setup Firebase or use 'admin-master'.";
             document.getElementById('loginError').style.display = 'block';
         }
     }
