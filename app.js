@@ -16,71 +16,57 @@ const db = firebase.firestore();
 db.enablePersistence().catch(err => console.log("Offline mode error:", err));
 
 // --- 2. MULTI-USER STATE ---
+// --- STATE VARIABLES ---
 let activeToken = localStorage.getItem('dua_activeToken') || null;
-const TARGET = 1000000;
+let userTarget = 1000000;
 let grandTotal = 0;
 let dailyCount = 0;
 let history = [];
 let sheetsQueue = [];
 
-// Check if already logged in on page load
+// Initialize Audio Player on load
 window.onload = () => {
+    changeAudio(); // Load the default stream
     if (activeToken) {
         initializeUserData(activeToken);
     }
 };
 
-// --- 3. THE GATEKEEPER LOGIC ---
-// --- 3. THE GATEKEEPER LOGIC ---
+// --- QURAN RADIO LOGIC ---
+function changeAudio() {
+    const audioEl = document.getElementById('quranAudio');
+    const selectEl = document.getElementById('reciterSelect');
+    audioEl.src = selectEl.value;
+}
+
+// --- GATEKEEPER ---
 async function verifyToken() {
     const inputToken = document.getElementById('tokenInput').value.trim();
     if (!inputToken) return;
 
-    // --- 🚨 MASTER KEY BYPASS (For immediate testing) 🚨 ---
-    // This lets you in immediately without needing Firebase to be fully set up yet.
+    // MASTER KEY BYPASS
     if (inputToken === "admin-master" || inputToken === "guest-01") {
         localStorage.setItem('dua_activeToken', inputToken);
         initializeUserData(inputToken);
-        return; // Stop here, don't even check Firebase!
+        return; 
     }
-    // --------------------------------------------------------
-
-    try {
-        // Check Firebase to see if this token exists
-        const docRef = await db.collection("valid_tokens").doc(inputToken).get();
-        
-        if (docRef.exists) {
-            localStorage.setItem('dua_activeToken', inputToken);
-            initializeUserData(inputToken);
-        } else {
-            document.getElementById('loginError').style.display = 'block';
-        }
-    } catch (error) {
-        console.error("Authentication Error:", error);
-        
-        // Offline Fallback
-        if (localStorage.getItem('dua_grandTotal_' + inputToken)) {
-            localStorage.setItem('dua_activeToken', inputToken);
-            initializeUserData(inputToken);
-        } else {
-            document.getElementById('loginError').innerText = "NETWORK ERROR: Setup Firebase or use 'admin-master'.";
-            document.getElementById('loginError').style.display = 'block';
-        }
-    }
+    document.getElementById('loginError').style.display = 'block';
 }
 
 function initializeUserData(token) {
     activeToken = token;
     
-    // Hide login, show dashboard
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('currentUserDisplay').innerText = token;
 
-    // Load THIS SPECIFIC USER'S data from local storage
+    // Load User Target
+    let savedTarget = parseInt(localStorage.getItem('dua_target_' + token));
+    userTarget = isNaN(savedTarget) ? 1000000 : savedTarget;
+
+    // Load Grand Total
     grandTotal = parseInt(localStorage.getItem('dua_grandTotal_' + token));
     if (isNaN(grandTotal)) {
-        // If it's the admin token, start at 1100. If it's anyone else, start at 0.
         grandTotal = (token === "admin-master") ? 1100 : 0; 
         localStorage.setItem('dua_grandTotal_' + token, grandTotal);
     }
@@ -93,20 +79,52 @@ function initializeUserData(token) {
 
 function logout() {
     localStorage.removeItem('dua_activeToken');
-    location.reload(); // Refresh the page to show login screen
+    location.reload(); 
 }
 
-// --- 4. DASHBOARD CORE LOGIC ---
+// --- DYNAMIC COLOR SHIFT ENGINE ---
+function updateThemeColors(percentage) {
+    const root = document.documentElement;
+    
+    if (percentage < 33) {
+        // Neon Cyan
+        root.style.setProperty('--theme-color', '#00FFFF');
+        root.style.setProperty('--theme-glow', 'rgba(0, 255, 255, 0.5)');
+        root.style.setProperty('--theme-bg', 'rgba(0, 255, 255, 0.1)');
+    } else if (percentage < 66) {
+        // Neon Purple
+        root.style.setProperty('--theme-color', '#B026FF');
+        root.style.setProperty('--theme-glow', 'rgba(176, 38, 255, 0.5)');
+        root.style.setProperty('--theme-bg', 'rgba(176, 38, 255, 0.1)');
+    } else {
+        // Neon Gold
+        root.style.setProperty('--theme-color', '#FFD700');
+        root.style.setProperty('--theme-glow', 'rgba(255, 215, 0, 0.5)');
+        root.style.setProperty('--theme-bg', 'rgba(255, 215, 0, 0.1)');
+    }
+}
+
+// --- DASHBOARD UI UPDATES ---
 function updateUI() {
+    document.getElementById('targetDisplay').innerText = userTarget.toLocaleString();
     document.getElementById('grandTotal').innerText = grandTotal.toLocaleString();
-    document.getElementById('leftToGo').innerText = (TARGET - grandTotal).toLocaleString();
-    document.getElementById('hundreds').innerText = Math.floor(grandTotal / 100).toLocaleString();
-    document.getElementById('thousands').innerText = Math.floor(grandTotal / 1000).toLocaleString();
+    
+    // Ensure "Left to Go" doesn't go negative if you surpass target
+    const remaining = Math.max(0, userTarget - grandTotal);
+    document.getElementById('leftToGo').innerText = remaining.toLocaleString();
     document.getElementById('dailyCount').innerText = dailyCount.toLocaleString();
 
-    const percentage = (grandTotal / TARGET) * 100;
-    document.getElementById('progressBar').style.width = `${percentage}%`;
+    // Math for SVG Speedometer & Colors
+    let percentage = (grandTotal / userTarget) * 100;
+    if (percentage > 100) percentage = 100; 
 
+    updateThemeColors(percentage);
+
+    // The half-circle circumference is 283. Offset 283 = Empty. Offset 0 = Full.
+    const strokeOffset = 283 - (percentage / 100) * 283;
+    document.getElementById('speedFill').style.strokeDashoffset = strokeOffset;
+
+    // Render History
     const logContainer = document.getElementById('historyLog');
     logContainer.innerHTML = '';
     history.slice().reverse().forEach(session => {
@@ -114,6 +132,17 @@ function updateUI() {
         li.innerText = `> ${session.date}: +${session.count.toLocaleString()}`;
         logContainer.appendChild(li);
     });
+}
+
+// --- NEW FUNCTION: EDIT TARGET ---
+function editTarget() {
+    const newTarget = prompt("Enter your new target number (e.g., 500000):", userTarget);
+    const parsed = parseInt(newTarget);
+    if (!isNaN(parsed) && parsed > 0) {
+        userTarget = parsed;
+        localStorage.setItem('dua_target_' + activeToken, userTarget);
+        updateUI();
+    }
 }
 
 function recite() {
@@ -136,29 +165,20 @@ function addManual() {
     }
 }
 
-// --- 5. CLOUD & SHEET SYNCING ---
-const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec"; 
-
+// --- SAVING LOGIC (Sheets/Local) ---
 function saveSession() {
     if (dailyCount === 0) return;
 
-    const timestamp = new Date().toLocaleString();
     const newSession = {
-        token: activeToken, // <--- We now log WHO did the recitation!
-        date: timestamp,
+        token: activeToken, 
+        date: new Date().toLocaleString(),
         count: dailyCount,
         grandTotal: grandTotal
     };
 
-    // 1. Save Locally to THEIR specific history
     history.push(newSession);
     localStorage.setItem('dua_history_' + activeToken, JSON.stringify(history));
 
-    // 2. FIREBASE SYNC: Save to a separate folder for this specific user!
-    db.collection("users").doc(activeToken).collection("sessions").add(newSession)
-      .catch(err => console.error("Firebase error:", err));
-
-    // 3. GOOGLE SHEETS QUEUE
     sheetsQueue.push(newSession);
     localStorage.setItem('dua_sheetsQueue_' + activeToken, JSON.stringify(sheetsQueue));
     processSheetsQueue();
@@ -169,36 +189,30 @@ function saveSession() {
 
 async function processSheetsQueue() {
     if (!navigator.onLine || sheetsQueue.length === 0) return;
-
     const sessionToSync = sheetsQueue[0];
-
     try {
-        await fetch(GOOGLE_SHEETS_URL, {
+        await fetch("https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec", {
             method: 'POST',
             body: JSON.stringify(sessionToSync)
         });
-        
         sheetsQueue.shift(); 
         localStorage.setItem('dua_sheetsQueue_' + activeToken, JSON.stringify(sheetsQueue));
-        
         if (sheetsQueue.length > 0) processSheetsQueue(); 
     } catch (error) {
-        console.log("Offline. Will retry later.");
+        console.log("Offline or Sheets URL missing.");
     }
 }
 window.addEventListener('online', processSheetsQueue);
-// --- 6. DOWNLOAD LOCAL CSV SPREADSHEET ---
+
+// --- CSV EXPORT ---
 function downloadCSV() {
     let csvContent = "data:text/csv;charset=utf-8,Date,Session Count,Grand Total\n";
-    
     history.forEach(row => {
         csvContent += `"${row.date}",${row.count},${row.grandTotal || ''}\n`;
     });
-
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "dua_tracker_backup.csv");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `dua_tracker_backup_${activeToken}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
