@@ -10,59 +10,99 @@ const firebaseConfig = {
   measurementId: "G-N4E52W26LS"
 };
 
-// Initialize Firebase (Uncomment when you paste your config)
-// firebase.initializeApp(firebaseConfig);
-// const db = firebase.firestore();
-// db.enablePersistence().catch(err => console.log("Offline mode error:", err));
+Initialize Firebase (Uncomment when you paste your config)
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+db.enablePersistence().catch(err => console.log("Offline mode error:", err));
 
-
-// --- STATE VARIABLES ---
+// --- 2. MULTI-USER STATE ---
+let activeToken = localStorage.getItem('dua_activeToken') || null;
 const TARGET = 1000000;
-
-// Initialize grandTotal. If it's the very first time, set to 1100!
-let grandTotal = parseInt(localStorage.getItem('dua_grandTotal'));
-if (isNaN(grandTotal)) {
-    grandTotal = 1100;
-    localStorage.setItem('dua_grandTotal', grandTotal);
-}
-
+let grandTotal = 0;
 let dailyCount = 0;
-let history = JSON.parse(localStorage.getItem('dua_history')) || [];
+let history = [];
+let sheetsQueue = [];
 
-// --- NEW FUNCTION: Manual Add ---
-function addManual() {
-    const inputField = document.getElementById('manualInput');
-    const manualAmount = parseInt(inputField.value);
-    
-    if (!isNaN(manualAmount) && manualAmount > 0) {
-        dailyCount += manualAmount;
-        grandTotal += manualAmount;
-        localStorage.setItem('dua_grandTotal', grandTotal);
-        inputField.value = ''; // Clear the box
-        updateUI();
+// Check if already logged in on page load
+window.onload = () => {
+    if (activeToken) {
+        initializeUserData(activeToken);
+    }
+};
+
+// --- 3. THE GATEKEEPER LOGIC ---
+async function verifyToken() {
+    const inputToken = document.getElementById('tokenInput').value.trim();
+    if (!inputToken) return;
+
+    try {
+        // Check Firebase to see if this token exists in the "valid_tokens" list
+        const docRef = await db.collection("valid_tokens").doc(inputToken).get();
+        
+        if (docRef.exists) {
+            // Token is valid! Save it and load their specific data
+            localStorage.setItem('dua_activeToken', inputToken);
+            initializeUserData(inputToken);
+        } else {
+            // Token does not exist
+            document.getElementById('loginError').style.display = 'block';
+        }
+    } catch (error) {
+        console.error("Authentication Error. You might be offline.", error);
+        // Offline Fallback: If they previously logged in, let them in
+        if (localStorage.getItem('dua_grandTotal_' + inputToken)) {
+            localStorage.setItem('dua_activeToken', inputToken);
+            initializeUserData(inputToken);
+        } else {
+            document.getElementById('loginError').innerText = "NETWORK ERROR: Cannot verify new token while offline.";
+            document.getElementById('loginError').style.display = 'block';
+        }
     }
 }
 
+function initializeUserData(token) {
+    activeToken = token;
+    
+    // Hide login, show dashboard
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('currentUserDisplay').innerText = token;
 
-// --- 3. CORE LOGIC ---
+    // Load THIS SPECIFIC USER'S data from local storage
+    grandTotal = parseInt(localStorage.getItem('dua_grandTotal_' + token));
+    if (isNaN(grandTotal)) {
+        // If it's the admin token, start at 1100. If it's anyone else, start at 0.
+        grandTotal = (token === "admin-master") ? 1100 : 0; 
+        localStorage.setItem('dua_grandTotal_' + token, grandTotal);
+    }
+    
+    history = JSON.parse(localStorage.getItem('dua_history_' + token)) || [];
+    sheetsQueue = JSON.parse(localStorage.getItem('dua_sheetsQueue_' + token)) || [];
+    
+    updateUI();
+}
+
+function logout() {
+    localStorage.removeItem('dua_activeToken');
+    location.reload(); // Refresh the page to show login screen
+}
+
+// --- 4. DASHBOARD CORE LOGIC ---
 function updateUI() {
-    // Math Calculations
     document.getElementById('grandTotal').innerText = grandTotal.toLocaleString();
     document.getElementById('leftToGo').innerText = (TARGET - grandTotal).toLocaleString();
     document.getElementById('hundreds').innerText = Math.floor(grandTotal / 100).toLocaleString();
     document.getElementById('thousands').innerText = Math.floor(grandTotal / 1000).toLocaleString();
     document.getElementById('dailyCount').innerText = dailyCount.toLocaleString();
 
-    // Progress Bar Fill
     const percentage = (grandTotal / TARGET) * 100;
     document.getElementById('progressBar').style.width = `${percentage}%`;
 
-    // Render History Log
     const logContainer = document.getElementById('historyLog');
     logContainer.innerHTML = '';
     history.slice().reverse().forEach(session => {
         const li = document.createElement('li');
-        li.innerText = `> ${session.date}: +${session.count.toLocaleString()} recitations added.`;
+        li.innerText = `> ${session.date}: +${session.count.toLocaleString()}`;
         logContainer.appendChild(li);
     });
 }
@@ -70,53 +110,58 @@ function updateUI() {
 function recite() {
     dailyCount++;
     grandTotal++;
-    
-    // Save to local browser memory instantly so you don't lose it if you close the tab
-    localStorage.setItem('dua_grandTotal', grandTotal);
-    
+    localStorage.setItem('dua_grandTotal_' + activeToken, grandTotal);
     updateUI();
 }
 
-// --- THE SYNC QUEUE FOR GOOGLE SHEETS ---
-let sheetsQueue = JSON.parse(localStorage.getItem('dua_sheetsQueue')) || [];
-const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec"; 
+function addManual() {
+    const inputField = document.getElementById('manualInput');
+    const manualAmount = parseInt(inputField.value);
+    
+    if (!isNaN(manualAmount) && manualAmount > 0) {
+        dailyCount += manualAmount;
+        grandTotal += manualAmount;
+        localStorage.setItem('dua_grandTotal_' + activeToken, grandTotal);
+        inputField.value = '';
+        updateUI();
+    }
+}
+
+// --- 5. CLOUD & SHEET SYNCING ---
+const GOOGLE_SHEETS_URL = "PASTE_YOUR_WEB_APP_URL_HERE"; 
 
 function saveSession() {
-    if (dailyCount === 0) return; 
+    if (dailyCount === 0) return;
 
     const timestamp = new Date().toLocaleString();
     const newSession = {
+        token: activeToken, // <--- We now log WHO did the recitation!
         date: timestamp,
         count: dailyCount,
-        grandTotal: grandTotal // Sending the total to the sheet too!
+        grandTotal: grandTotal
     };
 
-    // 1. SAVE LOCALLY
+    // 1. Save Locally to THEIR specific history
     history.push(newSession);
-    localStorage.setItem('dua_history', JSON.stringify(history));
+    localStorage.setItem('dua_history_' + activeToken, JSON.stringify(history));
 
-    // 2. FIREBASE CLOUD SYNC (Handles its own offline mode)
-    /*
-    db.collection("dua_sessions").add(newSession)
-      .then(() => console.log("Firebase synced!"))
+    // 2. FIREBASE SYNC: Save to a separate folder for this specific user!
+    db.collection("users").doc(activeToken).collection("sessions").add(newSession)
       .catch(err => console.error("Firebase error:", err));
-    */
 
-    // 3. GOOGLE SHEETS SYNC (With custom offline queue)
+    // 3. GOOGLE SHEETS QUEUE
     sheetsQueue.push(newSession);
-    localStorage.setItem('dua_sheetsQueue', JSON.stringify(sheetsQueue));
+    localStorage.setItem('dua_sheetsQueue_' + activeToken, JSON.stringify(sheetsQueue));
     processSheetsQueue();
 
-    // Reset daily counter
     dailyCount = 0;
     updateUI();
 }
 
-// Custom Offline-to-Online logic for Google Sheets
 async function processSheetsQueue() {
-    if (!navigator.onLine || sheetsQueue.length === 0) return; // Stop if offline or empty
+    if (!navigator.onLine || sheetsQueue.length === 0) return;
 
-    const sessionToSync = sheetsQueue[0]; // Get the oldest unsynced session
+    const sessionToSync = sheetsQueue[0];
 
     try {
         await fetch(GOOGLE_SHEETS_URL, {
@@ -124,38 +169,12 @@ async function processSheetsQueue() {
             body: JSON.stringify(sessionToSync)
         });
         
-        // If successful, remove it from the queue and save the shorter queue
         sheetsQueue.shift(); 
-        localStorage.setItem('dua_sheetsQueue', JSON.stringify(sheetsQueue));
+        localStorage.setItem('dua_sheetsQueue_' + activeToken, JSON.stringify(sheetsQueue));
         
-        // If there are more in the queue, run it again!
         if (sheetsQueue.length > 0) processSheetsQueue(); 
-        
     } catch (error) {
-        console.log("Offline or Sheets Error. Will retry later.", error);
+        console.log("Offline. Will retry later.");
     }
 }
-
-// Listen for the internet coming back on, and trigger the queue!
 window.addEventListener('online', processSheetsQueue);
-
-// --- NEW FUNCTION: DOWNLOAD LOCAL CSV SPREADSHEET ---
-function downloadCSV() {
-    let csvContent = "data:text/csv;charset=utf-8,Date,Session Count,Grand Total\n";
-    
-    // Add history. You'd normally calculate the rolling total, but we'll keep it simple:
-    history.forEach(row => {
-        csvContent += `"${row.date}",${row.count},${row.grandTotal || ''}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "dua_tracker_backup.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Initial Render
-updateUI();
