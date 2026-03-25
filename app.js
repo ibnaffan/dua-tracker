@@ -67,7 +67,7 @@ function init3DClouds() {
 
     let cloudGeo = new THREE.PlaneGeometry(500,500);
     let cloudMaterial = new THREE.MeshLambertMaterial({
-        map: createCloudTexture(), transparent: true, opacity: 0.15,
+        map: createCloudTexture(), transparent: true, opacity: 0.4,
         color: 0x00FFFF, blending: THREE.AdditiveBlending
     });
 
