@@ -9,7 +9,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -17,7 +16,7 @@
     <div class="scanlines"></div>
 
     <div id="loginScreen" class="dashboard-container" style="text-align: center; max-width: 400px;">
-        <h1 class="glow-text glitch-hover" style="margin-bottom: 2rem;">SYSTEM ACCESS</h1>
+        <h1 class="glow-text glitch-hover" data-text="SYSTEM ACCESS" style="margin-bottom: 2rem;">SYSTEM ACCESS</h1>
         <p style="color: #888; margin-bottom: 1rem;">Enter your access token to continue.</p>
         <input type="text" id="tokenInput" class="neon-input" placeholder="Enter Token..." style="width: 100%; margin-bottom: 1rem; text-align: center;">
         <button class="secondary-btn" style="width: 100%;" onclick="verifyToken()">AUTHENTICATE</button>
@@ -25,11 +24,9 @@
     </div>
 
     <div id="dashboard" class="dashboard-container" style="display: none;">
-        <h1 class="glow-text glitch-hover" data-text="SYSTEM ACCESS" style="margin-bottom: 2rem;">SYSTEM ACCESS</h1>
-
-    <header>
-        <h1 class="glow-text glitch-hover" data-text="OP-1 TRACKER">OP-1 TRACKER</h1>
-    </header>
+        <header>
+            <h1 class="glow-text glitch-hover" data-text="OP-1 TRACKER">OP-1 TRACKER</h1>
+        </header>
 
         <div class="media-center">
             <button id="weatherBtn" class="small-btn" style="width: 100%; border-color: #555; color: #888; margin-bottom: 15px;" onclick="toggleWeather()">🌧️ AMBIENT STORM: OFF</button>
@@ -101,6 +98,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app-storm.js"></script>
 </body>
 </html>
