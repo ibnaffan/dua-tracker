@@ -1,3 +1,10 @@
+:root {
+    /* These variables will be changed by Javascript! */
+    --theme-color: #00FFFF;
+    --theme-glow: rgba(0, 255, 255, 0.5);
+    --theme-bg: rgba(0, 255, 255, 0.1);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,38 +12,48 @@
     font-family: 'Orbitron', sans-serif;
 }
 
+/* CYBERPUNK GRID BACKGROUND */
 body {
-    background-color: #111111;
+    background-color: #080808;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
     color: #ffffff;
     display: flex;
     justify-content: center;
     padding: 2rem;
+    min-height: 100vh;
 }
 
 .dashboard-container {
     width: 100%;
     max-width: 900px;
-    background: #1a1a1a;
+    background: rgba(20, 20, 20, 0.95);
     border: 1px solid #333;
     border-radius: 12px;
     padding: 2rem;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.05);
+    box-shadow: 0 0 30px var(--theme-glow);
+    backdrop-filter: blur(5px);
+    transition: box-shadow 0.5s ease;
 }
 
 header {
     text-align: center;
     margin-bottom: 2rem;
-    border-bottom: 2px solid #00FFFF;
+    border-bottom: 2px solid var(--theme-color);
     padding-bottom: 1rem;
+    transition: border-color 0.5s ease;
 }
 
 .glow-text {
-    color: #00FFFF;
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    color: var(--theme-color);
+    text-shadow: 0 0 10px var(--theme-glow);
     letter-spacing: 4px;
+    transition: all 0.5s ease;
 }
 
-.cyan-text { color: #00FFFF; }
+.dynamic-text { color: var(--theme-color); transition: color 0.5s ease; }
 
 .stats-grid {
     display: grid;
@@ -46,7 +63,7 @@ header {
 }
 
 .stat-box {
-    background: #222;
+    background: #111;
     padding: 1.5rem;
     border-radius: 8px;
     text-align: center;
@@ -54,8 +71,9 @@ header {
 }
 
 .glow-box {
-    border: 1px solid #00FFFF;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    border: 1px solid var(--theme-color);
+    box-shadow: 0 0 15px var(--theme-glow);
+    transition: all 0.5s ease;
 }
 
 .label {
@@ -72,21 +90,27 @@ header {
     font-weight: 700;
 }
 
-.progress-container {
+/* SVG SPEEDOMETER */
+.speedometer-container {
     width: 100%;
-    height: 12px;
-    background: #333333;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-bottom: 3rem;
+    max-width: 400px;
+    margin: 0 auto 2rem auto;
+    text-align: center;
 }
 
-.progress-bar {
-    height: 100%;
-    width: 0%;
-    background: #00FFFF;
-    box-shadow: 0 0 10px #00FFFF;
-    transition: width 0.3s ease;
+.speedometer {
+    width: 100%;
+    overflow: visible;
+}
+
+.speed-bg {
+    stroke: #222;
+}
+
+.speed-fill {
+    stroke: var(--theme-color);
+    filter: drop-shadow(0 0 8px var(--theme-color));
+    transition: stroke 0.5s ease, stroke-dashoffset 0.8s ease-out;
 }
 
 .main-controls {
@@ -97,47 +121,90 @@ header {
     margin-bottom: 3rem;
 }
 
+/* THE REACTOR PULSE BUTTON */
 .main-btn {
     width: 150px;
     height: 150px;
     border-radius: 50%;
-    background: transparent;
-    border: 4px solid #00FFFF;
-    color: #00FFFF;
+    background: var(--theme-bg);
+    border: 4px solid var(--theme-color);
+    color: var(--theme-color);
     font-size: 3rem;
     font-weight: 900;
     cursor: pointer;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.3);
-    transition: all 0.1s ease;
+    box-shadow: 0 0 20px var(--theme-glow), inset 0 0 20px var(--theme-glow);
+    transition: all 0.1s ease, border-color 0.5s, color 0.5s, box-shadow 0.5s;
+    animation: pulse 2s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 20px var(--theme-glow), inset 0 0 20px var(--theme-glow); }
+    100% { box-shadow: 0 0 40px var(--theme-color), inset 0 0 40px var(--theme-color); }
 }
 
 .main-btn:active {
-    transform: scale(0.95);
-    background: rgba(0, 255, 255, 0.1);
+    transform: scale(0.90);
+    animation: none;
+    background: var(--theme-color);
+    color: #000;
 }
 
-.secondary-btn {
+/* AUDIO PLAYER & INPUTS */
+.media-center {
+    background: #111;
+    border: 1px solid #333;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.neon-input {
+    background: #000;
+    border: 1px solid #333;
+    color: var(--theme-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-family: 'Orbitron', sans-serif;
+    outline: none;
+    transition: border 0.3s, color 0.5s;
+}
+
+.neon-input:focus {
+    border: 1px solid var(--theme-color);
+    box-shadow: 0 0 10px var(--theme-glow);
+}
+
+audio {
+    width: 100%;
+    height: 35px;
+    outline: none;
+    margin-top: 10px;
+    filter: sepia(20%) hue-rotate(180deg) saturate(200%) invert(90%); /* Cool hack to make default audio player dark/neon */
+}
+
+.secondary-btn, .small-btn {
     background: transparent;
-    border: 1px solid #00FFFF;
-    color: #00FFFF;
-    padding: 1rem 2rem;
+    border: 1px solid var(--theme-color);
+    color: var(--theme-color);
+    padding: 0.5rem 1rem;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 700;
-    letter-spacing: 2px;
-    transition: background 0.2s;
+    letter-spacing: 1px;
+    transition: all 0.3s;
 }
 
-.secondary-btn:hover {
-    background: rgba(0, 255, 255, 0.1);
+.secondary-btn:hover, .small-btn:hover {
+    background: var(--theme-bg);
 }
 
 .terminal {
-    background: #0a0a0a;
+    background: #050505;
     border: 1px solid #333;
     border-radius: 6px;
     padding: 1rem;
-    height: 200px;
+    height: 150px;
     overflow-y: auto;
 }
 
@@ -152,43 +219,8 @@ header {
 #historyLog {
     list-style: none;
     font-family: monospace;
-    color: #00FFFF;
+    color: var(--theme-color);
     font-size: 0.9rem;
     line-height: 1.5;
-}
-
-.manual-input-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 1rem;
-}
-
-.neon-input {
-    background: #111;
-    border: 1px solid #333;
-    color: #00FFFF;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    font-family: 'Orbitron', sans-serif;
-    outline: none;
-    transition: border 0.3s;
-}
-
-.neon-input:focus {
-    border: 1px solid #00FFFF;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-}
-
-.small-btn {
-    background: transparent;
-    border: 1px solid #00FFFF;
-    color: #00FFFF;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'Orbitron', sans-serif;
-}
-
-.small-btn:hover {
-    background: rgba(0, 255, 255, 0.2);
+    transition: color 0.5s;
 }
