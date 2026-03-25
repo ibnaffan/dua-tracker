@@ -7,7 +7,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Orbitron', sans-serif; }
 
 body {
-    background-color: #000000;
+    background-color: #050505;
     color: #ffffff;
     display: flex;
     justify-content: center;
@@ -16,7 +16,6 @@ body {
     overflow-x: hidden;
 }
 
-/* 🌟 FIXED: Moved z-index to 1 so it sits above the black body! */
 #canvas-container {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     z-index: 1; pointer-events: none;
@@ -25,10 +24,9 @@ body {
 .scanlines {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: repeating-linear-gradient(to bottom, transparent 0px, rgba(0,0,0,0.3) 2px, transparent 4px);
-    pointer-events: none; z-index: 9999; opacity: 0.6;
+    pointer-events: none; z-index: 9999; opacity: 0.4; 
 }
 
-/* Dashboard sits at z-index 10, safely above the clouds */
 .dashboard-container {
     width: 100%; max-width: 900px; background: rgba(10, 10, 10, 0.65);
     border: 1px solid rgba(50, 50, 50, 0.5); border-radius: 12px; padding: 2rem;
@@ -39,33 +37,17 @@ body {
 header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(--theme-color); padding-bottom: 1rem; transition: border-color 0.5s ease; }
 
 .glow-text { 
-    color: var(--theme-color); 
-    text-shadow: 0 0 5px var(--theme-color); 
-    letter-spacing: 2px; 
-    transition: all 0.3s ease; 
-    cursor: default; 
+    color: var(--theme-color); text-shadow: 0 0 5px var(--theme-color); 
+    letter-spacing: 2px; transition: all 0.3s ease; cursor: default; 
 }
 
-/* 🌟 NEW: TRUE CYBERPUNK GLITCH EFFECT */
 .glitch-hover { position: relative; }
-
 .glitch-hover:hover::before, .glitch-hover:hover::after {
-    content: attr(data-text);
-    position: absolute; top: 0; left: 0; width: 100%;
-    background: transparent;
-    color: var(--theme-color);
+    content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; background: transparent; color: var(--theme-color);
 }
-/* Red Cyan Shift + Slicing */
-.glitch-hover:hover::before {
-    left: 3px;
-    text-shadow: -2px 0 #ff003c;
-    animation: glitch-slice 0.3s infinite linear alternate-reverse;
-}
-.glitch-hover:hover::after {
-    left: -3px;
-    text-shadow: 2px 0 #0055ff;
-    animation: glitch-slice-2 0.2s infinite linear alternate-reverse;
-}
+.glitch-hover:hover::before { left: 3px; text-shadow: -2px 0 #ff003c; animation: glitch-slice 0.3s infinite linear alternate-reverse; }
+.glitch-hover:hover::after { left: -3px; text-shadow: 2px 0 #0055ff; animation: glitch-slice-2 0.2s infinite linear alternate-reverse; }
+
 @keyframes glitch-slice {
     0% { clip-path: polygon(0 20%, 100% 20%, 100% 30%, 0 30%); transform: translate(2px, -2px); }
     33% { clip-path: polygon(0 60%, 100% 60%, 100% 70%, 0 70%); transform: translate(-2px, 2px); }
@@ -96,34 +78,33 @@ header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid var(-
 .main-btn {
     width: 150px; height: 150px; border-radius: 50%; background: var(--theme-bg); border: 4px solid var(--theme-color);
     color: var(--theme-color); font-size: 3rem; font-weight: 900; cursor: pointer; position: relative;
-    box-shadow: 0 0 20px var(--theme-glow);
-    transition: all 0.1s ease, border-color 0.5s, color 0.5s; z-index: 5;
+    box-shadow: 0 0 20px var(--theme-glow); transition: all 0.1s ease, border-color 0.5s, color 0.5s; z-index: 5;
 }
 .main-btn::after {
-    content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
-    border-radius: 50%; border: 2px solid var(--theme-color);
+    content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; border: 2px solid var(--theme-color);
     animation: hardwareWave 1.5s infinite; z-index: -1; pointer-events: none;
 }
-@keyframes hardwareWave {
-    0% { transform: scale(0.9); opacity: 1; }
-    100% { transform: scale(1.3); opacity: 0; }
-}
+@keyframes hardwareWave { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 .main-btn:active { transform: scale(0.90); background: var(--theme-color); color: #000; }
 
 .particle {
-    position: absolute; color: var(--theme-color); font-weight: 900; font-size: 1.8rem;
-    text-shadow: 0 0 15px var(--theme-color); pointer-events: none;
-    animation: floatUp 0.8s ease-out forwards; z-index: 9999;
+    position: absolute; color: var(--theme-color); font-weight: 900; font-size: 1.8rem; text-shadow: 0 0 15px var(--theme-color);
+    pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 9999;
 }
-@keyframes floatUp {
-    0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-80px) scale(1.5); opacity: 0; }
-}
+@keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(1.5); opacity: 0; } }
 
 .media-center { background: rgba(0,0,0,0.5); border: 1px solid #333; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center; }
 .neon-input { background: #000; border: 1px solid #333; color: var(--theme-color); padding: 0.5rem 1rem; border-radius: 4px; font-family: 'Orbitron', sans-serif; outline: none; transition: border 0.3s, color 0.5s; }
 .neon-input:focus { border: 1px solid var(--theme-color); box-shadow: 0 0 10px var(--theme-glow); }
-audio { width: 100%; height: 35px; outline: none; margin-top: 10px; filter: sepia(20%) hue-rotate(180deg) saturate(200%) invert(90%); }
+
+/* 🌟 FIXED: Restored the strong dark filter for the audio player */
+audio { 
+    width: 100%; 
+    height: 35px; 
+    outline: none; 
+    margin-top: 10px; 
+    filter: invert(90%) hue-rotate(180deg) grayscale(50%) contrast(1.5); 
+}
 
 .secondary-btn, .small-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--theme-color); color: var(--theme-color); padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 700; letter-spacing: 1px; transition: all 0.3s; }
 .secondary-btn:hover, .small-btn:hover { background: var(--theme-bg); box-shadow: 0 0 10px var(--theme-glow); }
