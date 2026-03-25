@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OP-1 DU'A TRACKER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1 class="glow-text">OP-1 TRACKER</h1>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span class="label">TARGET</span>
+                <span class="value" id="target">1,000,000</span>
+            </div>
+            <div class="stat-box glow-box">
+                <span class="label">GRAND TOTAL</span>
+                <span class="value cyan-text" id="grandTotal">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="label">LEFT TO GO</span>
+                <span class="value" id="leftToGo">1,000,000</span>
+            </div>
+            <div class="stat-box">
+                <span class="label">100s COMPLETED</span>
+                <span class="value" id="hundreds">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="label">1,000s COMPLETED</span>
+                <span class="value" id="thousands">0</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="main-controls">
+            <div class="daily-stat">
+                <span class="label">SESSION COUNT</span>
+                <span class="value" id="dailyCount">0</span>
+            </div>
+            
+            <div class="manual-input-group">
+                <input type="number" id="manualInput" class="neon-input" placeholder="Enter amount...">
+                <button class="small-btn" onclick="addManual()">ADD</button>
+            </div>
+            
+            <button class="main-btn" id="reciteBtn" onclick="recite()">
+                <span class="btn-text">+1</span>
+            </button>
+
+            <button class="secondary-btn" onclick="saveSession()">END DAY & SAVE</button>
+	    <button class="secondary-btn" style="margin-top: 10px; border-color: #555; color: #aaa;" onclick="downloadCSV()">DOWNLOAD CSV BACKUP</button>
+        </div>
+
+        <div class="terminal">
+            <div class="terminal-header">SESSION_HISTORY.LOG</div>
+            <ul id="historyLog">
+                </ul>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
