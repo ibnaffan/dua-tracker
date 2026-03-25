@@ -9,9 +9,11 @@
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div class="clouds"></div>
+    <div id="canvas-container"></div>
     <div class="scanlines"></div>
 
     <div id="loginScreen" class="dashboard-container" style="text-align: center; max-width: 400px;">
@@ -50,7 +52,7 @@
             <div class="stat-box glow-box" style="position: relative;">
                 <span class="label">GRAND TOTAL</span>
                 <span class="value dynamic-text" id="grandTotal">0</span>
-                <button onclick="resetTotal()" style="background: none; border: none; color: #ff3333; cursor: pointer; position: absolute; top: 10px; right: 10px; font-size: 1.2rem;" title="Reset Total">⟲</button>
+                <button onclick="resetTotal()" style="background: none; border: none; color: #ff3333; cursor: pointer; position: absolute; top: 10px; right: 10px; font-size: 1.2rem; font-weight: bold;" title="Reset Total">⟲</button>
             </div>
             <div class="stat-box">
                 <span class="label">LEFT TO GO</span>
