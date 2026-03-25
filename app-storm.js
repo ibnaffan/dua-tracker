@@ -1,3 +1,4 @@
+// Paste your Firebase config here!
 const firebaseConfig = {
   apiKey: "AIzaSyDbpRlCkuYrHN9Gd01VIw1uH9UuaJLPmAE",
   authDomain: "op-1-tracker.firebaseapp.com",
@@ -13,7 +14,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 db.enablePersistence().catch(err => console.log("Offline mode error:", err));
 
-// --- 2. STATE VARIABLES ---
+// --- STATE VARIABLES ---
 let activeToken = localStorage.getItem('dua_activeToken') || null;
 let userTarget = 1000000;
 let grandTotal = 0;
@@ -22,7 +23,7 @@ let history = [];
 let sheetsQueue = [];
 let isWeatherPlaying = false; 
 
-// 🌟 LIQUID CHROME 3D OCEAN VARIABLES
+// 🌟 LIQUID MERCURY 3D OCEAN VARIABLES
 let scene, camera, renderer, oceanGeometry, oceanMesh, clock;
 let splashParticles, splashGeometry, flashLight, moonLight;
 
@@ -32,24 +33,24 @@ window.onload = () => {
     if (activeToken) { initializeUserData(activeToken); }
 };
 
-// --- 3. THE 3D CYBER-OCEAN ENGINE ---
+// --- THE 3D CYBER-OCEAN ENGINE ---
 function init3DOcean() {
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020202, 0.015); // Dark grey/black fog
+    scene.fog = new THREE.FogExp2(0x020202, 0.015); // Dark atmospheric fog
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
     camera.position.set(0, 15, 60); 
     camera.lookAt(0, 5, -20);
 
-    let ambient = new THREE.AmbientLight(0x222222);
+    let ambient = new THREE.AmbientLight(0x333333);
     scene.add(ambient);
 
-    // 🌟 NEW: A sharp, bright light to create those intense liquid silver highlights
+    // Sharp, bright light to create intense liquid silver highlights
     moonLight = new THREE.DirectionalLight(0xffffff, 1.5);
     moonLight.position.set(100, 100, -50);
     scene.add(moonLight);
 
-    // The glowing theme light (Cyan/Purple/Gold) that the metal will reflect
+    // Glowing theme light (Cyan/Purple/Gold)
     flashLight = new THREE.PointLight(0x00FFFF, 2, 400);
     flashLight.position.set(0, 40, -40);
     scene.add(flashLight);
@@ -63,24 +64,24 @@ function init3DOcean() {
         container.appendChild(renderer.domElement);
     }
 
-    // 🌟 INCREASED RESOLUTION for smoother micro-ripples
+    // High resolution for smooth micro-ripples
     oceanGeometry = new THREE.PlaneGeometry(400, 400, 180, 180);
     oceanGeometry.rotateX(-Math.PI / 2);
 
-    // 🌟 UPGRADE: High-end Liquid Chrome / Mercury Material
+    // 🌟 PURE LIQUID CHROME MATERIAL (NO WIREFRAME!)
     let oceanMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x444444,        // Silver/Grey base
+        color: 0x555555,        // Silver base
         metalness: 1.0,         // 100% reflective metal
-        roughness: 0.1,         // Ultra smooth
-        clearcoat: 1.0,         // Adds a "wet" glossy layer on top
+        roughness: 0.15,        // Smooth but scatters light like water
+        clearcoat: 1.0,         // "Wet" glossy top layer
         clearcoatRoughness: 0.1,
-        flatShading: false      // MUST BE FALSE to get the smooth look from your image!
+        flatShading: false      // Smooth curves!
     });
     
     oceanMesh = new THREE.Mesh(oceanGeometry, oceanMaterial);
-    scene.add(oceanMesh);
+    scene.add(oceanMesh); // Grid is GONE. Only pure liquid remains.
 
-    // THE IMPACT SPLASH SYSTEM (Kept the neon splashes!)
+    // THE IMPACT SPLASH SYSTEM
     const particleCount = 2000;
     splashGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
@@ -134,7 +135,6 @@ function animateOcean() {
 
     const stormMultiplier = isWeatherPlaying ? 3.5 : 0.4; 
     const speedMultiplier = isWeatherPlaying ? 1.5 : 0.4;
-
     const forwardFlow = time * 15 * speedMultiplier;
 
     for (let i = 0; i < positions.count; i++) {
@@ -145,7 +145,7 @@ function animateOcean() {
         const wave2 = Math.sin(x * 0.05 - time * speedMultiplier * 1.2) * Math.sin((z + forwardFlow) * 0.04) * 2.5;
         const wave3 = Math.cos(x * 0.1 + (z + forwardFlow) * 0.1) * 1.5;
         
-        // 🌟 NEW: High-frequency micro-ripples to match your image texture!
+        // Micro-ripples for the detailed liquid look
         const wave4 = Math.sin(x * 0.3 + time * 3) * Math.cos((z + forwardFlow) * 0.3) * 0.4;
         
         const finalHeight = (wave1 + wave2 + wave3 + wave4) * stormMultiplier;
@@ -157,9 +157,7 @@ function animateOcean() {
     }
 
     oceanGeometry.attributes.position.needsUpdate = true;
-    
-    // 🌟 THIS makes the shadows and highlights smooth like real water!
-    oceanGeometry.computeVertexNormals(); 
+    oceanGeometry.computeVertexNormals(); // Recalculates light hitting the water
 
     const splashPos = splashGeometry.attributes.position.array;
     for (let i = 0; i < splashPos.length / 3; i++) {
@@ -180,14 +178,13 @@ function animateOcean() {
         flashLight.position.x = (Math.random() - 0.5) * 150;
         flashLight.position.z = -20 - Math.random() * 50;
     } else {
-        // Keeps a subtle theme glow running even when storm is off
         flashLight.intensity = Math.max(3, flashLight.intensity - 1.5);
     }
 
     renderer.render(scene, camera);
 }
 
-// --- 4. AUDIO CONTROLS ---
+// --- AUDIO CONTROLS ---
 function changeAudio() {
     const audioEl = document.getElementById('quranAudio');
     const selectEl = document.getElementById('reciterSelect');
@@ -205,14 +202,14 @@ function toggleWeather() {
         btn.style.color = "#888"; btn.style.borderColor = "#555";
         isWeatherPlaying = false;
     } else {
-        audio.play().catch(e => console.log("Audio blocked. Interact with page first."));
+        audio.play().catch(e => console.log("Audio blocked."));
         btn.innerText = "🌧️ AMBIENT STORM: ON";
         btn.style.color = "var(--theme-color)"; btn.style.borderColor = "var(--theme-color)";
         isWeatherPlaying = true;
     }
 }
 
-// --- 5. GATEKEEPER (LOGIN) ---
+// --- GATEKEEPER (LOGIN) ---
 document.getElementById("tokenInput").addEventListener("keypress", function(event) {
     if (event.key === "Enter") { event.preventDefault(); verifyToken(); }
 });
@@ -269,7 +266,7 @@ function initializeUserData(token) {
 
 function logout() { localStorage.removeItem('dua_activeToken'); location.reload(); }
 
-// --- 6. DYNAMIC COLOR SHIFT ---
+// --- DYNAMIC COLOR SHIFT ---
 function updateThemeColors(percentage) {
     const root = document.documentElement;
     let currentHex = 0x00FFFF;
@@ -291,14 +288,13 @@ function updateThemeColors(percentage) {
         currentHex = 0xFFD700;
     }
 
-    // 🌟 Make the lighting and splashes match your theme!
     if (flashLight) flashLight.color.setHex(currentHex);
     if (splashParticles && splashParticles.material) {
         splashParticles.material.color.setHex(currentHex);
     }
 }
 
-// --- 7. UI UPDATES & RESET ---
+// --- UI UPDATES & RESET ---
 function updateUI() {
     document.getElementById('targetDisplay').innerText = userTarget.toLocaleString();
     document.getElementById('grandTotal').innerText = grandTotal.toLocaleString();
@@ -347,7 +343,7 @@ function resetTotal() {
     }
 }
 
-// --- 8. CORE ACTIONS & BUTTON PARTICLES ---
+// --- CORE ACTIONS & BUTTON PARTICLES ---
 function recite(event) {
     dailyCount++;
     grandTotal++;
@@ -387,7 +383,7 @@ function addManual() {
     }
 }
 
-// --- 9. SAVING & SYNCING ---
+// --- SAVING & SYNCING ---
 const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyrVqUW7oBnr6Rh9XRGUvAIpcZesRXii213YB0fSfdFk-RsXnKHR0AJDE9nwfY6yJ6k4A/exec";
 
 function saveSession() {
@@ -419,7 +415,7 @@ async function processSheetsQueue() {
 }
 window.addEventListener('online', processSheetsQueue);
 
-// --- 10. CSV EXPORT ---
+// --- CSV EXPORT ---
 function downloadCSV() {
     let csvContent = "data:text/csv;charset=utf-8,Date,Session Count,Grand Total\n";
     history.forEach(row => { csvContent += `"${row.date}",${row.count},${row.grandTotal || ''}\n`; });
